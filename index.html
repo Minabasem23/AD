@@ -1,44 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Watch Ad</title>
-  <script src="//libtl.com/sdk.js"
-    data-zone="10638478"
-    data-sdk="show_10638478"></script>
-</head>
-<body>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini USDT Wallet</title>
 
-<button onclick="watchAd()">Watch Ad</button>
+<!-- Telegram SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<script>
-const userId = new URLSearchParams(location.search).get("uid");
-let startTime = 0;
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js"
+        data-zone="10638478"
+        data-sdk="show_10638478"></script>
 
-async function watchAd() {
-  startTime = Date.now();
-
-  try {
-    await show_10638478();
-  } catch {
-    alert("No ad");
-    return;
-  }
-
-  const watchedTime = (Date.now() - startTime) / 1000;
-
-  if (watchedTime < 15) {
-    alert("You must wait 15 seconds");
-    return;
-  }
-
-  fetch("https://YOUR-HF-SPACE.hf.space/reward", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ user_id: userId })
-  });
-
-  alert("Reward added!");
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
 }
-</script>
+
+.wallet-container {
+  background: rgba(0,0,0,0.35);
+  padding: 25px;
+  border-radius: 20px;
+  width: 360px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.hidden { display: none; }
+</style>
+</head>
+
+<body>
+<div class="wallet-container">
+  <h2>Mini USDT Wallet</h2>
+
+  <p>ID: <span id="uid">---</span></p>
+  <p>Balance: <b><span id="balance">0.000000</span></b> USDT</p>
+  <p>Ads watched: <span id="ads">0</span></p>
+
+  <button id="watchBtn">Watch Ad</button>
+  <p id="status" class="hidden"></p>
+
+  <hr>
+
+  <input type="number" id="withdrawAmount" placeholder="Min 0.1 USDT">
+  <button id="withdrawBtn">Withdraw</button>
+
+  <pre id="withdrawCode"></pre>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
