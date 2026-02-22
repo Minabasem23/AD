@@ -1,107 +1,94 @@
-/* ===============================
-   CONFIG
-================================ */
-const API_URL = "https://minabasem23-ad.hf.space"; // غيّرها
-const REWARD_PER_AD = 0.000170;
-const MIN_WATCH_TIME = 15; // ثانية
-
-/* ===============================
-   USER ID
-================================ */
-const params = new URLSearchParams(window.location.search);
-const USER_ID = params.get("uid");
-
-if (!USER_ID) {
-  alert("User ID missing");
-  throw new Error("No UID");
+// ===== Telegram check =====
+if (!window.Telegram || !Telegram.WebApp) {
+  alert("❌ افتح الصفحة من داخل Telegram فقط");
+  throw new Error("Not in Telegram");
 }
 
-/* ===============================
-   STATE
-================================ */
-let adStartTime = 0;
-let isWatching = false;
+Telegram.WebApp.ready();
 
-/* ===============================
-   WATCH AD
-================================ */
-async function watchAd() {
-  if (isWatching) return;
-  isWatching = true;
+// ===== User ID =====
+const userId = Telegram.WebApp.initDataUnsafe?.user?.id || "guest";
+document.getElementById("uid").textContent = userId;
 
+// ===== Wallet data =====
+const REWARD = 0.0170;
+const MIN_WITHDRAW = 0.1;
+const WAIT_TIME = 15; // seconds
+
+let data = JSON.parse(localStorage.getItem("wallet_" + userId)) || {
+  balance: 0,
+  ads: 0
+};
+
+function save() {
+  localStorage.setItem("wallet_" + userId, JSON.stringify(data));
+  document.getElementById("balance").textContent = data.balance.toFixed(6);
+  document.getElementById("ads").textContent = data.ads;
+}
+save();
+
+// ===== Watch Ad =====
+let adStart = 0;
+
+document.getElementById("watchBtn").onclick = async () => {
   if (typeof show_10638478 !== "function") {
-    alert("Ad SDK not loaded");
-    isWatching = false;
+    alert("SDK not loaded");
     return;
   }
 
-  adStartTime = Date.now();
+  adStart = Date.now();
+  document.getElementById("status").textContent = "⏳ Watching ad...";
+  document.getElementById("status").classList.remove("hidden");
 
   try {
-    await show_10638478({
-      ymid: USER_ID
-    });
-  } catch (e) {
-    alert("No ad available");
-    isWatching = false;
+    await show_10638478({ ymid: userId });
+  } catch {
+    document.getElementById("status").textContent = "❌ No ad available";
     return;
   }
 
-  const watchedSeconds = (Date.now() - adStartTime) / 1000;
+  const watched = (Date.now() - adStart) / 1000;
 
-  if (watchedSeconds < MIN_WATCH_TIME) {
-    alert("❌ يجب مشاهدة الإعلان 15 ثانية كاملة");
-    isWatching = false;
+  if (watched < WAIT_TIME) {
+    document.getElementById("status").textContent =
+      "❌ You must wait 15 seconds";
     return;
   }
 
-  sendReward();
-}
+  data.balance += REWARD;
+  data.ads += 1;
+  save();
 
-/* ===============================
-   SEND REWARD
-================================ */
-async function sendReward() {
-  try {
-    const res = await fetch(API_URL + "/reward", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        user_id: USER_ID
-      })
-    });
+  document.getElementById("status").textContent =
+    `✅ +${REWARD} USDT added`;
+};
 
-    const data = await res.json();
+// ===== Withdraw =====
+document.getElementById("withdrawBtn").onclick = () => {
+  const amount = parseFloat(
+    document.getElementById("withdrawAmount").value
+  );
 
-    if (data.error) {
-      alert("❌ " + data.error);
-    } else {
-      alert("✅ +0.000170 USDT\nرصيدك: " + data.balance.toFixed(6));
-    }
-
-  } catch (err) {
-    alert("Server error");
+  if (!amount || amount < MIN_WITHDRAW) {
+    alert("❌ Minimum withdraw is 0.1 USDT");
+    return;
   }
 
-  isWatching = false;
-}
+  if (amount > data.balance) {
+    alert("❌ Insufficient balance");
+    return;
+  }
 
-/* ===============================
-   PRELOAD AD
-================================ */
-if (typeof show_10638478 === "function") {
-  show_10638478({
-    type: "preload",
-    ymid: USER_ID
-  }).catch(() => {});
-}
+  data.balance -= amount;
+  save();
 
-/* ===============================
-   BUTTON
-================================ */
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("watch-btn");
-  if (btn) btn.onclick = watchAd;
-});
+  const code = btoa(
+    userId + "|" + amount + "|" + Date.now()
+  );
+
+  document.getElementById("withdrawCode").textContent =
+    "Withdraw Code:\n" + code;
+};
+
+// ===== Preload =====
+show_10638478({ type: "preload", ymid: userId }).catch(() => {});
