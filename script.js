@@ -1,127 +1,107 @@
-// ---------------------------
-// إعدادات أساسية
-// ---------------------------
-const rewardPerAd = 0.00017;
-const maxAds = 250;
-const adsBeforePause = 10;
-const pauseTime = 15000; // 15 ثانية
-const SECRET_KEY = "voycyofyiitssitgiihh8h8ir6678922@-!?='$#3-?37>>\\;§§^©{]";
+/* ===============================
+   CONFIG
+================================ */
+const API_URL = "https://minabasem23-ad.hf.space"; // غيّرها
+const REWARD_PER_AD = 0.000170;
+const MIN_WATCH_TIME = 15; // ثانية
 
-let adsWatched = 0;
-let wallet = JSON.parse(localStorage.getItem('wallet')) || { balance: 1.0 };
-let balance = wallet.balance;
+/* ===============================
+   USER ID
+================================ */
+const params = new URLSearchParams(window.location.search);
+const USER_ID = params.get("uid");
 
-// ---------------------------
-// تحديث العرض
-// ---------------------------
-function updateDisplay() {
-  document.getElementById('balance').textContent = balance.toFixed(6);
-  document.getElementById('ads-watched').textContent = adsWatched;
+if (!USER_ID) {
+  alert("User ID missing");
+  throw new Error("No UID");
 }
-updateDisplay();
 
-// ---------------------------
-// مشاهدة الإعلان
-// ---------------------------
-document.getElementById('watch-btn').addEventListener('click', async () => {
-  if (adsWatched >= maxAds) {
-    alert("لقد وصلت الحد الأقصى اليومي للإعلانات!");
+/* ===============================
+   STATE
+================================ */
+let adStartTime = 0;
+let isWatching = false;
+
+/* ===============================
+   WATCH AD
+================================ */
+async function watchAd() {
+  if (isWatching) return;
+  isWatching = true;
+
+  if (typeof show_10638478 !== "function") {
+    alert("Ad SDK not loaded");
+    isWatching = false;
     return;
   }
 
-  if (typeof show_10638478 === "function") {
-    try {
-      await show_10638478({ ymid: "user123" });
-    } catch (e) {
-      alert("فشل عرض الإعلان أو تم تخطيه!");
-      return;
-    }
-  }
-
-  adsWatched++;
-  if (adsWatched % adsBeforePause === 0) {
-    document.getElementById('watch-btn').disabled = true;
-    setTimeout(() => {
-      document.getElementById('watch-btn').disabled = false;
-      alert("يمكنك متابعة مشاهدة الإعلانات الآن!");
-    }, pauseTime);
-  }
-
-  balance += rewardPerAd;
-  wallet.balance = balance;
-  localStorage.setItem('wallet', JSON.stringify(wallet));
-  updateDisplay();
-
-  const rewardDiv = document.getElementById('reward');
-  rewardDiv.textContent = `+${rewardPerAd.toFixed(6)} USDT`;
-  rewardDiv.classList.remove('hidden');
-  setTimeout(() => rewardDiv.classList.add('hidden'), 3000);
-});
-
-// ---------------------------
-// السحب
-// ---------------------------
-document.getElementById('withdraw-btn').addEventListener('click', async () => {
-  const input = document.getElementById('withdraw-amount');
-  const walletAddress = document.getElementById('wallet-address').value;
-  const amount = parseFloat(input.value);
-
-  if (!amount || amount < 0.1 || amount > balance) {
-    alert("الرجاء إدخال مبلغ صالح (≥0.1 USDT) وأقل من رصيدك.");
-    return;
-  }
-  if (!walletAddress) {
-    alert("الرجاء إدخال عنوان المحفظة.");
-    return;
-  }
+  adStartTime = Date.now();
 
   try {
-    const res = await fetch("https://huggingface.co/spaces/Minabasem23/Ad/api/withdraw", {
+    await show_10638478({
+      ymid: USER_ID
+    });
+  } catch (e) {
+    alert("No ad available");
+    isWatching = false;
+    return;
+  }
+
+  const watchedSeconds = (Date.now() - adStartTime) / 1000;
+
+  if (watchedSeconds < MIN_WATCH_TIME) {
+    alert("❌ يجب مشاهدة الإعلان 15 ثانية كاملة");
+    isWatching = false;
+    return;
+  }
+
+  sendReward();
+}
+
+/* ===============================
+   SEND REWARD
+================================ */
+async function sendReward() {
+  try {
+    const res = await fetch(API_URL + "/reward", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SECRET_KEY}`
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ amount, walletAddress })
+      body: JSON.stringify({
+        user_id: USER_ID
+      })
     });
+
     const data = await res.json();
 
     if (data.error) {
-      alert(data.error);
-      return;
+      alert("❌ " + data.error);
+    } else {
+      alert("✅ +0.000170 USDT\nرصيدك: " + data.balance.toFixed(6));
     }
 
-    balance -= amount;
-    wallet.balance = balance;
-    localStorage.setItem('wallet', JSON.stringify(wallet));
-    updateDisplay();
-
-    document.getElementById('withdrawed-amount').textContent = data.withdrawed_amount.toFixed(6);
-    document.getElementById('withdraw-code').textContent = data.withdraw_code;
-    document.getElementById('withdraw-balance').textContent = data.remaining_balance.toFixed(6);
-    document.getElementById('withdraw-result').classList.remove('hidden');
-    document.getElementById('copy-status').classList.add('hidden');
-    input.value = "";
   } catch (err) {
-    alert("حدث خطأ أثناء السحب!");
-    console.error(err);
+    alert("Server error");
   }
-});
 
-// ---------------------------
-// نسخ كود السحب
-// ---------------------------
-document.getElementById('copy-btn').addEventListener('click', () => {
-  const code = document.getElementById('withdraw-code').textContent;
-  navigator.clipboard.writeText(code).then(() => {
-    document.getElementById('copy-status').classList.remove('hidden');
-    setTimeout(() => document.getElementById('copy-status').classList.add('hidden'), 2000);
-  });
-});
-
-// ---------------------------
-// تحميل الإعلان مسبقًا (اختياري)
-// ---------------------------
-if (typeof show_10638478 === "function") {
-  show_10638478({ type: "preload", ymid: "user123" }).catch(() => {});
+  isWatching = false;
 }
+
+/* ===============================
+   PRELOAD AD
+================================ */
+if (typeof show_10638478 === "function") {
+  show_10638478({
+    type: "preload",
+    ymid: USER_ID
+  }).catch(() => {});
+}
+
+/* ===============================
+   BUTTON
+================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("watch-btn");
+  if (btn) btn.onclick = watchAd;
+});
