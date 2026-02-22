@@ -1,76 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Mini Wallet</title>
-
-<!-- Monetag SDK -->
-<script src="//libtl.com/sdk.js"
-        data-zone="10638478"
-        data-sdk="show_10638478"></script>
-
-<style>
-body {
-  background: #111;
-  color: #fff;
-  font-family: Arial;
-  text-align: center;
-  padding-top: 50px;
-}
-
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
-</style>
+  <title>Watch Ad</title>
+  <script src="//libtl.com/sdk.js"
+    data-zone="10638478"
+    data-sdk="show_10638478"></script>
 </head>
-
 <body>
-
-<h2>Mini USDT Wallet</h2>
-
-<p>Balance:</p>
-<h3 id="balance">0.000000</h3>
 
 <button onclick="watchAd()">Watch Ad</button>
 
-<p id="msg"></p>
-
 <script>
-let balance = Number(localStorage.getItem("balance")) || 0;
-const reward = 0.000170;
+const userId = new URLSearchParams(location.search).get("uid");
+let startTime = 0;
 
-document.getElementById("balance").innerText = balance.toFixed(6);
+async function watchAd() {
+  startTime = Date.now();
 
-function watchAd() {
-  if (typeof show_10638478 !== "function") {
-    alert("Ad not loaded");
+  try {
+    await show_10638478();
+  } catch {
+    alert("No ad");
     return;
   }
 
-  let start = Date.now();
+  const watchedTime = (Date.now() - startTime) / 1000;
 
-  show_10638478().then(() => {
-    let seconds = (Date.now() - start) / 1000;
+  if (watchedTime < 15) {
+    alert("You must wait 15 seconds");
+    return;
+  }
 
-    if (seconds < 15) {
-      document.getElementById("msg").innerText =
-        "❌ You must watch 15 seconds";
-      return;
-    }
-
-    balance += reward;
-    localStorage.setItem("balance", balance);
-
-    document.getElementById("balance").innerText =
-      balance.toFixed(6);
-
-    document.getElementById("msg").innerText =
-      "✅ +" + reward + " USDT";
+  fetch("https://YOUR-HF-SPACE.hf.space/reward", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ user_id: userId })
   });
+
+  alert("Reward added!");
 }
 </script>
-
 </body>
 </html>
