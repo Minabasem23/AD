@@ -1,31 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini USDT Wallet</title>
-<link rel="stylesheet" href="style.css">
+<title>Mini Wallet</title>
+
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js"
+        data-zone="10638478"
+        data-sdk="show_10638478"></script>
+
+<style>
+body {
+  background: #111;
+  color: #fff;
+  font-family: Arial;
+  text-align: center;
+  padding-top: 50px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
 </head>
+
 <body>
-<div class="wallet-container">
-  <h1>Mini USDT Wallet</h1>
-  <p>Balance: <span id="balance">0</span> USDT</p>
 
-  <button id="watch-btn">Watch Ad</button>
-  <div id="reward" class="hidden">+0.000170 USDT</div>
+<h2>Mini USDT Wallet</h2>
 
-  <h2>Withdraw</h2>
-  <input type="text" id="wallet-address" placeholder="Wallet Address">
-  <input type="number" id="withdraw-amount" placeholder="Amount (0.1~)">
-  <button id="withdraw-btn">Withdraw</button>
+<p>Balance:</p>
+<h3 id="balance">0.000000</h3>
 
-  <div id="withdraw-result" class="hidden">
-    <p>✅ Withdraw successful!</p>
-    <p>Amount: <span id="withdrawed-amount"></span> USDT</p>
-    <p>Code: <span id="withdraw-code"></span></p>
-    <p>Remaining Balance: <span id="withdraw-balance"></span> USDT</p>
-  </div>
-</div>
-<script src="script.js"></script>
+<button onclick="watchAd()">Watch Ad</button>
+
+<p id="msg"></p>
+
+<script>
+let balance = Number(localStorage.getItem("balance")) || 0;
+const reward = 0.000170;
+
+document.getElementById("balance").innerText = balance.toFixed(6);
+
+function watchAd() {
+  if (typeof show_10638478 !== "function") {
+    alert("Ad not loaded");
+    return;
+  }
+
+  let start = Date.now();
+
+  show_10638478().then(() => {
+    let seconds = (Date.now() - start) / 1000;
+
+    if (seconds < 15) {
+      document.getElementById("msg").innerText =
+        "❌ You must watch 15 seconds";
+      return;
+    }
+
+    balance += reward;
+    localStorage.setItem("balance", balance);
+
+    document.getElementById("balance").innerText =
+      balance.toFixed(6);
+
+    document.getElementById("msg").innerText =
+      "✅ +" + reward + " USDT";
+  });
+}
+</script>
+
 </body>
 </html>
