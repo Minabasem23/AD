@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini USDT Wallet</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/script.js" defer></script>
+
+<!-- SDK إعلان وهمي -->
+<script src='//libtl.com/sdk.js' data-zone='10638478' data-sdk='show_10638478'></script>
+
+</head>
+<body>
+<div class="wallet-container">
+  <h1>Mini USDT Wallet</h1>
+  <p>Balance: <span id="balance">{{ balance }}</span> USDT</p>
+  <p id="ads-counter">Ads watched: <span id="ads-watched">0</span>/250</p>
+
+  <button id="watch-btn">Watch Ad</button>
+  <div id="reward" class="hidden">+0.000170 USDT</div>
+
+  <h2>Withdraw</h2>
+  <input type="number" id="withdraw-amount" placeholder="Amount (0.1~...)">
+  <button id="withdraw-btn">Withdraw</button>
+
+  <div id="withdraw-result" class="hidden">
+    <p>✅ Withdraw successful!</p>
+    <p>Amount: <span id="withdrawed-amount"></span> USDT</p>
+    <p>Code: <span id="withdraw-code"></span></p>
+    <button id="copy-btn">📋 Copy Code</button>
+    <p id="copy-status" class="hidden">Copied!</p>
+    <p>Remaining Balance: <span id="withdraw-balance"></span> USDT</p>
+  </div>
+</div>
+</body>
+</html>
