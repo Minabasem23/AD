@@ -85,15 +85,9 @@ document.getElementById("uid").textContent = uid;
 let balance = 0;
 let adsWatched = 0;
 const rewardPerAd = 0.0002;
-let adWatchedThisSession = false; // ✅ هذا يمنع الزيادة المزدوجة
 
 // ===== مشاهدة إعلان =====
 document.getElementById("watchBtn").onclick = async () => {
-  if (adWatchedThisSession) {
-    alert("لقد شاهدت الإعلان بالفعل، انتظر حتى يتوفر إعلان جديد");
-    return;
-  }
-
   if (typeof show_10638478 !== "function") {
     alert("SDK لم يتم تحميله");
     return;
@@ -112,8 +106,6 @@ document.getElementById("watchBtn").onclick = async () => {
 
   document.getElementById("balance").textContent = balance.toFixed(6);
   document.getElementById("ads").textContent = adsWatched;
-
-  adWatchedThisSession = true; // يتم قفل الإعلان الحالي
 
   const status = document.getElementById("status");
   status.textContent = `+${rewardPerAd.toFixed(6)} USDT`;
