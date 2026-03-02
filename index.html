@@ -30,14 +30,26 @@ body {
   border-radius: 20px;
   width: 360px;
 }
+h1,h2{text-align:center;}
 button {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: #ffd700;
+  color: #222;
+  font-weight: bold;
+}
+button:hover { background: #ffec50; }
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
   border-radius: 12px;
   border: none;
-  font-weight: bold;
-  cursor: pointer;
 }
 .hidden { display: none; }
 </style>
@@ -62,6 +74,67 @@ button {
   <pre id="withdrawCode"></pre>
 </div>
 
-<script src="script.js"></script>
+<script>
+// ===== Telegram Web App ready =====
+Telegram.WebApp.ready();
+
+// ===== المتغيرات =====
+let uid = "user_" + Math.floor(Math.random()*1000000);
+document.getElementById("uid").textContent = uid;
+
+let balance = 0;
+let adsWatched = 0;
+const rewardPerAd = 0.0002;
+let adWatchedThisSession = false; // ✅ هذا يمنع الزيادة المزدوجة
+
+// ===== مشاهدة إعلان =====
+document.getElementById("watchBtn").onclick = async () => {
+  if (adWatchedThisSession) {
+    alert("لقد شاهدت الإعلان بالفعل، انتظر حتى يتوفر إعلان جديد");
+    return;
+  }
+
+  if (typeof show_10638478 !== "function") {
+    alert("SDK لم يتم تحميله");
+    return;
+  }
+
+  try {
+    await show_10638478({ ymid: uid });
+  } catch {
+    alert("لا يوجد إعلان متاح");
+    return;
+  }
+
+  // ✅ زيادة الرصيد مرة واحدة لكل إعلان
+  balance += rewardPerAd;
+  adsWatched++;
+
+  document.getElementById("balance").textContent = balance.toFixed(6);
+  document.getElementById("ads").textContent = adsWatched;
+
+  adWatchedThisSession = true; // يتم قفل الإعلان الحالي
+
+  const status = document.getElementById("status");
+  status.textContent = `+${rewardPerAd.toFixed(6)} USDT`;
+  status.classList.remove("hidden");
+  setTimeout(() => status.classList.add("hidden"), 2000);
+};
+
+// ===== سحب الرصيد =====
+document.getElementById("withdrawBtn").onclick = () => {
+  const amount = parseFloat(document.getElementById("withdrawAmount").value);
+  if (!amount || amount > balance || amount < 0.1) {
+    alert("المبلغ غير صالح أو أقل من الحد الأدنى 0.1 USDT");
+    return;
+  }
+
+  balance -= amount;
+  document.getElementById("balance").textContent = balance.toFixed(6);
+
+  const code = btoa(amount + "|" + Date.now());
+  document.getElementById("withdrawCode").textContent = "Withdraw Code:\n" + code;
+};
+</script>
 </body>
 </html>
