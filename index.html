@@ -3,15 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini USDT Wallet</title>
+<title>Mini MO Wallet</title>
 
-<!-- Telegram SDK -->
+<!-- Telegram SDK (إن أردت لاحقًا) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Monetag SDK -->
-<script src="//libtl.com/sdk.js"
-        data-zone="10638478"
-        data-sdk="show_10638478"></script>
+<!-- Monetag SDK (إن أردت لاحقًا) -->
+<script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
 
 <style>
 body {
@@ -69,7 +67,7 @@ pre {
 
 <body>
 <div class="wallet-container">
-  <h2>Mini USDT Wallet</h2>
+  <h2>Mini MO Wallet</h2>
 
   <p>Balance: <b><span id="balance">0</span></b> MO</p>
   <p>Ads watched: <span id="ads">0</span></p>
@@ -79,7 +77,7 @@ pre {
 
   <hr>
 
-  <input type="number" id="withdrawAmount" placeholder="Enter phone number (N)">
+  <input type="text" id="withdrawAmount" placeholder="Enter phone number (012xxxxxxxx)">
   <button id="withdrawBtn">Withdraw 10 MO</button>
 
   <pre id="withdrawCode"></pre>
@@ -89,8 +87,6 @@ pre {
 <script>
 // ===== إعداد LocalStorage =====
 let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, adsWatched: 0 };
-
-// ===== تحديث الصفحة بالقيم المخزنة =====
 let balance = wallet.balance;
 let adsWatched = wallet.adsWatched;
 document.getElementById("balance").textContent = balance;
@@ -129,6 +125,16 @@ document.getElementById("watchBtn").onclick = async () => {
   setTimeout(() => status.classList.add("hidden"), 2000);
 };
 
+// ===== توليد رمز عشوائي =====
+function generateCode(len = 12){
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  let code = "";
+  for(let i=0;i<len;i++){
+    code += chars.charAt(Math.floor(Math.random()*chars.length));
+  }
+  return code;
+}
+
 // ===== سحب الرصيد =====
 const WITHDRAW_AMOUNT = 10;
 document.getElementById("withdrawBtn").onclick = () => {
@@ -138,38 +144,29 @@ document.getElementById("withdrawBtn").onclick = () => {
   }
 
   const phone = document.getElementById("withdrawAmount").value;
-  if(!phone){
-    alert("❌ ادخل رقم الهاتف (N)");
+  if(!/^012\d{9}$/.test(phone)){
+    alert("❌ Sorry, you don't enter the orange number");
     return;
   }
 
   const password = prompt("Enter password (P)");
+  if(!password){
+    alert("❌ Password required");
+    return;
+  }
 
   balance -= WITHDRAW_AMOUNT;
   document.getElementById("balance").textContent = balance;
-
-  // حفظ الرصيد الجديد في LocalStorage
   localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
 
-  // ===== الوقت حتى الملي ثانية =====
-  const now = new Date();
-  const TIME = Number(
-    `${now.getMonth()+1}${now.getDate()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}${now.getMilliseconds()}`
-  );
-
-  const x = Math.floor(Math.random() * 100) + 1;
-  const result = Math.floor(TIME / x);
-
-  // الكود النهائي يظهر الوقت/ x بدلاً من Calc
-  const code = `${result}_${phone}-${password}`;
+  const code = generateCode(12);
   const withdrawCode = document.getElementById("withdrawCode");
-  withdrawCode.textContent = `Your Code: ${code}`;
+  withdrawCode.textContent = `Your Code: ${code}_${phone}-${password}`;
 
-  // اظهار زر النسخ
   const copyBtn = document.getElementById("copyBtn");
   copyBtn.classList.remove("hidden");
   copyBtn.onclick = () => {
-    navigator.clipboard.writeText(code).then(()=>{
+    navigator.clipboard.writeText(withdrawCode.textContent).then(()=>{
       alert("✅ Code copied!");
     });
   };
