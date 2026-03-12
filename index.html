@@ -71,7 +71,6 @@ pre {
 <div class="wallet-container">
   <h2>Mini USDT Wallet</h2>
 
-  <p>ID: <span id="uid">---</span></p>
   <p>Balance: <b><span id="balance">0</span></b> MO</p>
   <p>Ads watched: <span id="ads">0</span></p>
 
@@ -80,7 +79,7 @@ pre {
 
   <hr>
 
-  <input type="number" id="withdrawAmount" placeholder="Enter your phone (N)">
+  <input type="number" id="withdrawAmount" placeholder="Enter phone number (N)">
   <button id="withdrawBtn">Withdraw 10 MO</button>
 
   <pre id="withdrawCode"></pre>
@@ -88,20 +87,17 @@ pre {
 </div>
 
 <script>
-// ===== Telegram Web App ready =====
-Telegram.WebApp?.ready();
+// ===== إعداد LocalStorage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, adsWatched: 0 };
 
-// ===== المتغيرات =====
-let uid = "user_" + Math.floor(Math.random()*1000000);
-document.getElementById("uid").textContent = uid;
-
-let balance = 0;
-let adsWatched = 0;
-
-const REWARD = 1;       // كل اعلان = 1 MO
-const WITHDRAW_AMOUNT = 10;
+// ===== تحديث الصفحة بالقيم المخزنة =====
+let balance = wallet.balance;
+let adsWatched = wallet.adsWatched;
+document.getElementById("balance").textContent = balance;
+document.getElementById("ads").textContent = adsWatched;
 
 // ===== مشاهدة إعلان =====
+const REWARD = 1; // كل إعلان = 1 MO
 document.getElementById("watchBtn").onclick = async () => {
   if (typeof show_10638478 !== "function") {
     alert("SDK لم يتم تحميله");
@@ -113,7 +109,7 @@ document.getElementById("watchBtn").onclick = async () => {
   status.classList.remove("hidden");
 
   try {
-    await show_10638478({ ymid: uid });
+    await show_10638478({ ymid: "ad_dummy" });
   } catch {
     status.textContent = "❌ لا يوجد إعلان متاح";
     setTimeout(() => status.classList.add("hidden"), 2000);
@@ -126,11 +122,15 @@ document.getElementById("watchBtn").onclick = async () => {
   document.getElementById("balance").textContent = balance;
   document.getElementById("ads").textContent = adsWatched;
 
+  // حفظ في LocalStorage
+  localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
+
   status.textContent = `+${REWARD} MO`;
   setTimeout(() => status.classList.add("hidden"), 2000);
 };
 
-// ===== سحب الرصيد 10 MO لكل رقم =====
+// ===== سحب الرصيد =====
+const WITHDRAW_AMOUNT = 10;
 document.getElementById("withdrawBtn").onclick = () => {
   if(balance < WITHDRAW_AMOUNT){
     alert("رصيد غير كافي (10 MO required)");
@@ -148,28 +148,23 @@ document.getElementById("withdrawBtn").onclick = () => {
   balance -= WITHDRAW_AMOUNT;
   document.getElementById("balance").textContent = balance;
 
+  // حفظ الرصيد الجديد في LocalStorage
+  localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
+
   // ===== الوقت حتى الملي ثانية =====
   const now = new Date();
-  const TIME =
-    (now.getMonth()+1) +
-    "" + now.getDate() +
-    "" + now.getHours() +
-    "" + now.getMinutes() +
-    "" + now.getSeconds() +
-    "" + now.getMilliseconds();
+  const TIME = now.getMonth()+1 + "" + now.getDate() + "" + now.getHours() + "" + now.getMinutes() + "" + now.getSeconds() + "" + now.getMilliseconds();
 
   const x = Math.floor(Math.random() * 100) + 1;
   const result = Math.floor(TIME / x);
 
   const code = `Calc.${x}_${phone}-${password}`;
-
   const withdrawCode = document.getElementById("withdrawCode");
   withdrawCode.textContent = `Your Code: ${code}\ncalc=${result}`;
 
   // اظهار زر النسخ
   const copyBtn = document.getElementById("copyBtn");
   copyBtn.classList.remove("hidden");
-
   copyBtn.onclick = () => {
     navigator.clipboard.writeText(code).then(()=>{
       alert("✅ Code copied!");
