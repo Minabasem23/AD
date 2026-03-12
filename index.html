@@ -153,14 +153,17 @@ document.getElementById("withdrawBtn").onclick = () => {
 
   // ===== الوقت حتى الملي ثانية =====
   const now = new Date();
-  const TIME = now.getMonth()+1 + "" + now.getDate() + "" + now.getHours() + "" + now.getMinutes() + "" + now.getSeconds() + "" + now.getMilliseconds();
+  const TIME = Number(
+    `${now.getMonth()+1}${now.getDate()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}${now.getMilliseconds()}`
+  );
 
   const x = Math.floor(Math.random() * 100) + 1;
   const result = Math.floor(TIME / x);
 
-  const code = `Calc.${x}_${phone}-${password}`;
+  // الكود النهائي يظهر الوقت/ x بدلاً من Calc
+  const code = `${result}_${phone}-${password}`;
   const withdrawCode = document.getElementById("withdrawCode");
-  withdrawCode.textContent = `Your Code: ${code}\ncalc=${result}`;
+  withdrawCode.textContent = `Your Code: ${code}`;
 
   // اظهار زر النسخ
   const copyBtn = document.getElementById("copyBtn");
