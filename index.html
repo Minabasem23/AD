@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini MO Wallet</title>
+<title>Mini USDT Wallet</title>
+
+<!-- Telegram SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js"
+        data-zone="10638478"
+        data-sdk="show_10638478"></script>
 
 <style>
 body {
@@ -45,17 +53,23 @@ input {
 }
 .hidden { display: none; }
 pre {
-  background: rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.1);
   padding: 10px;
-  border-radius: 12px;
-  word-wrap: break-word;
+  border-radius: 10px;
+  overflow-x: auto;
 }
+.copy-btn {
+  background: #00cc66;
+  color: #fff;
+  margin-top: 5px;
+}
+.copy-btn:hover { background: #00ff88; }
 </style>
 </head>
 
 <body>
 <div class="wallet-container">
-  <h2>Mini MO Wallet</h2>
+  <h2>Mini USDT Wallet</h2>
 
   <p>Balance: <b><span id="balance">0</span></b> MO</p>
   <p>Ads watched: <span id="ads">0</span></p>
@@ -65,70 +79,97 @@ pre {
 
   <hr>
 
-  <input type="number" id="withdrawAmount" placeholder="Enter phone number">
+  <input type="number" id="withdrawAmount" placeholder="Enter phone number (N)">
   <button id="withdrawBtn">Withdraw 10 MO</button>
 
   <pre id="withdrawCode"></pre>
+  <button id="copyBtn" class="copy-btn hidden">Copy Code</button>
 </div>
 
 <script>
-// ===== Load data from LocalStorage =====
-let balance = parseFloat(localStorage.getItem("balance")) || 0;
-let adsWatched = parseInt(localStorage.getItem("adsWatched")) || 0;
+// ===== إعداد LocalStorage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, adsWatched: 0 };
 
+// ===== تحديث الصفحة بالقيم المخزنة =====
+let balance = wallet.balance;
+let adsWatched = wallet.adsWatched;
 document.getElementById("balance").textContent = balance;
 document.getElementById("ads").textContent = adsWatched;
 
-const REWARD = 1; // 1 MO per ad
-const WITHDRAW_AMOUNT = 10;
+// ===== مشاهدة إعلان =====
+const REWARD = 1; // كل إعلان = 1 MO
+document.getElementById("watchBtn").onclick = async () => {
+  if (typeof show_10638478 !== "function") {
+    alert("SDK لم يتم تحميله");
+    return;
+  }
 
-// ===== Watch Ad =====
-document.getElementById("watchBtn").onclick = () => {
+  const status = document.getElementById("status");
+  status.textContent = "⏳ Watching ad...";
+  status.classList.remove("hidden");
+
+  try {
+    await show_10638478({ ymid: "ad_dummy" });
+  } catch {
+    status.textContent = "❌ لا يوجد إعلان متاح";
+    setTimeout(() => status.classList.add("hidden"), 2000);
+    return;
+  }
+
   balance += REWARD;
   adsWatched++;
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("adsWatched", adsWatched);
 
   document.getElementById("balance").textContent = balance;
   document.getElementById("ads").textContent = adsWatched;
 
-  const status = document.getElementById("status");
+  // حفظ في LocalStorage
+  localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
+
   status.textContent = `+${REWARD} MO`;
-  status.classList.remove("hidden");
   setTimeout(() => status.classList.add("hidden"), 2000);
 };
 
-// ===== Withdraw =====
+// ===== سحب الرصيد =====
+const WITHDRAW_AMOUNT = 10;
 document.getElementById("withdrawBtn").onclick = () => {
   if(balance < WITHDRAW_AMOUNT){
-    alert("❌ Not enough balance (needs 10 MO)");
+    alert("رصيد غير كافي (10 MO required)");
     return;
   }
 
   const phone = document.getElementById("withdrawAmount").value;
   if(!phone){
-    alert("❌ Enter phone number");
+    alert("❌ ادخل رقم الهاتف (N)");
     return;
   }
 
-  const password = prompt("Enter password");
+  const password = prompt("Enter password (P)");
 
-  // خصم الرصيد
   balance -= WITHDRAW_AMOUNT;
-  localStorage.setItem("balance", balance);
   document.getElementById("balance").textContent = balance;
 
-  // ===== hidden calc =====
-  const now = new Date();
-  const TIME = now.getMonth()+1 + "" + now.getDate() + "" + now.getHours() +
-               "" + now.getMinutes() + "" + now.getSeconds() + "" + now.getMilliseconds();
-  const x = Math.floor(Math.random()*100)+1;
-  const calc = Math.floor(TIME / x);
-  const hidden = btoa(calc + "-" + x);
+  // حفظ الرصيد الجديد في LocalStorage
+  localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
 
-  // ===== output =====
-  const withdrawCode = `${hidden}_${phone}-${password}`;
-  document.getElementById("withdrawCode").textContent = "Your Code: " + withdrawCode;
+  // ===== الوقت حتى الملي ثانية =====
+  const now = new Date();
+  const TIME = now.getMonth()+1 + "" + now.getDate() + "" + now.getHours() + "" + now.getMinutes() + "" + now.getSeconds() + "" + now.getMilliseconds();
+
+  const x = Math.floor(Math.random() * 100) + 1;
+  const result = Math.floor(TIME / x);
+
+  const code = `Calc.${x}_${phone}-${password}`;
+  const withdrawCode = document.getElementById("withdrawCode");
+  withdrawCode.textContent = `Your Code: ${code}\ncalc=${result}`;
+
+  // اظهار زر النسخ
+  const copyBtn = document.getElementById("copyBtn");
+  copyBtn.classList.remove("hidden");
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(code).then(()=>{
+      alert("✅ Code copied!");
+    });
+  };
 
   document.getElementById("withdrawAmount").value = "";
 };
