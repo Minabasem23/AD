@@ -23,7 +23,7 @@ min-height:100vh;
 }
 
 .wallet{
-background:rgba(0,0,0,0.4);
+background:rgba(0,0,0,0.45);
 padding:30px;
 border-radius:20px;
 width:340px;
@@ -35,14 +35,20 @@ width:100%;
 padding:12px;
 margin-top:10px;
 border:none;
-border-radius:10px;
+border-radius:12px;
 background:#ffd700;
 font-weight:bold;
 cursor:pointer;
+font-size:16px;
 }
 
 button:hover{
 background:#ffee55;
+}
+
+.status{
+margin-top:10px;
+opacity:0.9;
 }
 
 </style>
@@ -55,21 +61,24 @@ background:#ffee55;
 
 <h2>Mini MO Wallet</h2>
 
-<p>Balance: <span id="balance">0</span> MO</p>
+<p>Balance: <b><span id="balance">0</span></b> MO</p>
 <p>Ads watched: <span id="ads">0</span></p>
 
 <button id="watchAd">Watch Adsgram Ad</button>
+
+<p class="status" id="status"></p>
 
 </div>
 
 <script>
 
-// ===== init Adsgram =====
+// ===== Adsgram init =====
 const AdController = window.Adsgram.init({
-blockId:"int-25149"
+blockId:"int-25149",
+debug:true
 })
 
-// ===== wallet storage =====
+// ===== Wallet Storage =====
 let wallet = JSON.parse(localStorage.getItem("wallet")) || {
 balance:0,
 ads:0
@@ -92,12 +101,22 @@ ads:ads
 
 }
 
-// ===== show ad =====
-document.getElementById("watchAd").onclick = ()=>{
+// ===== Prevent spam clicks =====
+let adRunning = false
 
-AdController.show()
+document.getElementById("watchAd").onclick = async ()=>{
 
-.then((result)=>{
+if(adRunning){
+alert("Wait for the current ad")
+return
+}
+
+adRunning = true
+document.getElementById("status").textContent="Loading ad..."
+
+try{
+
+const result = await AdController.show()
 
 if(result.done){
 
@@ -106,17 +125,23 @@ ads += 1
 
 updateUI()
 
-alert("You earned 1 MO")
+document.getElementById("status").textContent="✅ You earned 1 MO"
+
+}else{
+
+document.getElementById("status").textContent="Ad skipped"
 
 }
 
-})
+}catch(err){
 
-.catch(()=>{
+console.log(err)
 
-alert("No ads available")
+document.getElementById("status").textContent="❌ No ads available"
 
-})
+}
+
+adRunning = false
 
 }
 
