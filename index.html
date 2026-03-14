@@ -1,151 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Mini MO Wallet</title>
 
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
 <!-- Adsgram SDK -->
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
 <style>
-
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#6a11cb,#2575fc);
-color:#fff;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
+body {
+  font-family: Arial;
+  background: linear-gradient(135deg,#6a11cb,#2575fc);
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  padding:20px;
 }
-
-.wallet{
-background:rgba(0,0,0,0.45);
-padding:30px;
-border-radius:20px;
-width:340px;
-text-align:center;
+.wallet-container {
+  background: rgba(0,0,0,0.35);
+  padding: 25px;
+  border-radius: 20px;
+  width: 360px;
+  text-align: center;
 }
-
-button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:12px;
-background:#ffd700;
-font-weight:bold;
-cursor:pointer;
-font-size:16px;
+button {
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border:none;
+  border-radius:12px;
+  font-weight:bold;
+  cursor:pointer;
+  background:#ffd700;
+  color:#222;
 }
-
-button:hover{
-background:#ffee55;
-}
-
-.status{
-margin-top:10px;
-opacity:0.9;
-}
-
+button:hover { background:#ffec50; }
+input { width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:none;}
+.hidden { display:none; }
+pre { background: rgba(255,255,255,0.1); padding:10px; border-radius:10px; overflow-x:auto;}
+.copy-btn { background:#00cc66; color:#fff; margin-top:5px; }
+.copy-btn:hover { background:#00ff88; }
 </style>
-
 </head>
 
 <body>
-
-<div class="wallet">
-
+<div class="wallet-container">
 <h2>Mini MO Wallet</h2>
-
 <p>Balance: <b><span id="balance">0</span></b> MO</p>
-<p>Ads watched: <span id="ads">0</span></p>
+<p>Ads watched Monetag: <span id="adsMonetag">0</span> / 250</p>
+<p>Ads watched Adsgram: <span id="adsAdsgram">0</span> / 250</p>
 
-<button id="watchAd">Watch Adsgram Ad</button>
+<button id="watchMonetagBtn">Watch Monetag Ad</button>
+<button id="watchAdsgramBtn">Watch Adsgram Ad</button>
+<p id="status" class="hidden"></p>
 
-<p class="status" id="status"></p>
-
+<hr>
+<input type="number" id="withdrawAmount" placeholder="Enter phone number (012xxxxxxx)">
+<button id="withdrawBtn">Withdraw 10 MO</button>
+<pre id="withdrawCode"></pre>
+<button id="copyBtn" class="copy-btn hidden">Copy Code</button>
 </div>
 
 <script>
-
-// ===== Adsgram init =====
-const AdController = window.Adsgram.init({
-blockId:"int-25149",
-debug:true
-})
-
-// ===== Wallet Storage =====
+// ===== LocalStorage Wallet =====
 let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-balance:0,
-ads:0
-}
-
-let balance = wallet.balance
-let ads = wallet.ads
-
-updateUI()
+  balance:0,
+  adsMonetag:0,
+  adsAdsgram:0
+};
+let balance = wallet.balance;
+let adsMonetag = wallet.adsMonetag;
+let adsAdsgram = wallet.adsAdsgram;
 
 function updateUI(){
-
-document.getElementById("balance").textContent = balance
-document.getElementById("ads").textContent = ads
-
-localStorage.setItem("wallet",JSON.stringify({
-balance:balance,
-ads:ads
-}))
-
+  document.getElementById("balance").textContent = balance;
+  document.getElementById("adsMonetag").textContent = adsMonetag;
+  document.getElementById("adsAdsgram").textContent = adsAdsgram;
+  localStorage.setItem("wallet", JSON.stringify({balance, adsMonetag, adsAdsgram}));
 }
+updateUI();
 
-// ===== Prevent spam clicks =====
-let adRunning = false
+// ===== Monetag Ad =====
+const MonetagBtn = document.getElementById("watchMonetagBtn");
+MonetagBtn.onclick = async () => {
+  if(adsMonetag >= 250){
+    alert("❌ Monetag daily limit reached");
+    return;
+  }
+  if(typeof show_10638478 !== "function"){
+    alert("SDK Monetag not loaded");
+    return;
+  }
+  const status = document.getElementById("status");
+  status.textContent = "⏳ Watching Monetag ad...";
+  status.classList.remove("hidden");
 
-document.getElementById("watchAd").onclick = async ()=>{
+  try{
+    await show_10638478({ ymid:"ad_dummy" });
+    balance += 1;
+    adsMonetag++;
+    updateUI();
+    status.textContent = "+1 MO (Monetag)";
+    setTimeout(()=>status.classList.add("hidden"),2000);
+  }catch{
+    status.textContent = "❌ Monetag no ad available";
+    setTimeout(()=>status.classList.add("hidden"),2000);
+  }
+};
 
-if(adRunning){
-alert("Wait for the current ad")
-return
-}
+// ===== Adsgram Ad =====
+const AdsgramBtn = document.getElementById("watchAdsgramBtn");
+const AdsgramController = window.Adsgram?.init({ blockId:"int-25149" });
 
-adRunning = true
-document.getElementById("status").textContent="Loading ad..."
+AdsgramBtn.onclick = async () => {
+  if(adsAdsgram >= 250){
+    alert("❌ Adsgram daily limit reached");
+    return;
+  }
+  if(!AdsgramController){
+    alert("Adsgram SDK not loaded");
+    return;
+  }
+  const status = document.getElementById("status");
+  status.textContent = "⏳ Watching Adsgram ad...";
+  status.classList.remove("hidden");
 
-try{
+  try{
+    const result = await AdsgramController.show();
+    if(result.done){
+      balance += 1;
+      adsAdsgram++;
+      updateUI();
+      status.textContent = "+1 MO (Adsgram)";
+    }else{
+      status.textContent = "❌ No Adsgram ad available";
+    }
+    setTimeout(()=>status.classList.add("hidden"),2000);
+  }catch{
+    status.textContent = "❌ Adsgram ad error";
+    setTimeout(()=>status.classList.add("hidden"),2000);
+  }
+};
 
-const result = await AdController.show()
+// ===== Withdraw =====
+const WITHDRAW_AMOUNT = 10;
+document.getElementById("withdrawBtn").onclick = () => {
+  if(balance < WITHDRAW_AMOUNT){
+    alert("❌ Insufficient balance (10 MO required)");
+    return;
+  }
+  const phone = document.getElementById("withdrawAmount").value;
+  if(!phone.startsWith("012")){
+    alert("❌ Sorry, you must enter the orange number (012xxxxxxx)");
+    return;
+  }
+  const password = prompt("Enter password (P)");
+  balance -= WITHDRAW_AMOUNT;
+  updateUI();
 
-if(result.done){
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let code = "";
+  for(let i=0;i<12;i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+  const withdrawCode = `Code.${code}_${phone}-${password}`;
+  document.getElementById("withdrawCode").textContent = withdrawCode;
 
-balance += 1
-ads += 1
-
-updateUI()
-
-document.getElementById("status").textContent="✅ You earned 1 MO"
-
-}else{
-
-document.getElementById("status").textContent="Ad skipped"
-
-}
-
-}catch(err){
-
-console.log(err)
-
-document.getElementById("status").textContent="❌ No ads available"
-
-}
-
-adRunning = false
-
-}
-
+  const copyBtn = document.getElementById("copyBtn");
+  copyBtn.classList.remove("hidden");
+  copyBtn.onclick = () => { navigator.clipboard.writeText(withdrawCode).then(()=>alert("✅ Code copied!")); };
+  document.getElementById("withdrawAmount").value = "";
+};
 </script>
-
 </body>
 </html>
