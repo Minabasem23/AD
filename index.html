@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Mini MO Wallet</title>
 
-<!-- Monetag -->
-<script src="//libtl.com/sdk.js"
-data-zone="10638478"
-data-sdk="show_10638478"></script>
-
-<!-- Adsgram -->
+<!-- Adsgram SDK -->
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
 <style>
@@ -21,138 +18,82 @@ background:linear-gradient(135deg,#6a11cb,#2575fc);
 color:#fff;
 display:flex;
 justify-content:center;
-align-items:flex-start;
+align-items:center;
 min-height:100vh;
-padding:20px;
 }
 
-.wallet-container{
-background:rgba(0,0,0,0.35);
-padding:25px;
+.wallet{
+background:rgba(0,0,0,0.4);
+padding:30px;
 border-radius:20px;
-width:360px;
+width:340px;
+text-align:center;
 }
-
-h2{text-align:center;}
 
 button{
 width:100%;
 padding:12px;
-margin:10px 0;
-border-radius:12px;
+margin-top:10px;
 border:none;
+border-radius:10px;
 background:#ffd700;
-color:#222;
 font-weight:bold;
 cursor:pointer;
 }
 
 button:hover{
-background:#ffec50;
-}
-
-input{
-width:100%;
-padding:10px;
-margin-bottom:10px;
-border-radius:10px;
-border:none;
-}
-
-.hidden{
-display:none;
-}
-
-pre{
-background:rgba(255,255,255,0.1);
-padding:10px;
-border-radius:10px;
-}
-
-.copy-btn{
-background:#00cc66;
-color:#fff;
+background:#ffee55;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<div class="wallet-container">
+<div class="wallet">
 
 <h2>Mini MO Wallet</h2>
 
-<p>Balance: <b><span id="balance">0</span></b> MO</p>
+<p>Balance: <span id="balance">0</span> MO</p>
 <p>Ads watched: <span id="ads">0</span></p>
 
-<button id="watchBtn">Watch Monetag Ad</button>
-
-<button id="adsgramBtn">Watch Adsgram Ad</button>
-
-<p id="status" class="hidden"></p>
-
-<hr>
-
-<input type="text" id="phone" placeholder="Enter phone 012xxxxxxxx">
-
-<button id="withdrawBtn">Withdraw 10 MO</button>
-
-<pre id="withdrawCode"></pre>
-
-<button id="copyBtn" class="copy-btn hidden">Copy Code</button>
+<button id="watchAd">Watch Adsgram Ad</button>
 
 </div>
 
 <script>
 
-// ===== Adsgram init =====
+// ===== init Adsgram =====
 const AdController = window.Adsgram.init({
 blockId:"int-25149"
 })
 
-// ===== Local wallet =====
-let wallet = JSON.parse(localStorage.getItem("wallet")) || {balance:0,adsWatched:0}
+// ===== wallet storage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || {
+balance:0,
+ads:0
+}
 
 let balance = wallet.balance
-let adsWatched = wallet.adsWatched
+let ads = wallet.ads
 
 updateUI()
 
 function updateUI(){
 
 document.getElementById("balance").textContent = balance
-document.getElementById("ads").textContent = adsWatched
+document.getElementById("ads").textContent = ads
 
 localStorage.setItem("wallet",JSON.stringify({
-balance,
-adsWatched
+balance:balance,
+ads:ads
 }))
 
 }
 
-// ===== Monetag Ad =====
-document.getElementById("watchBtn").onclick = async ()=>{
-
-try{
-
-await show_10638478({ymid:"user"})
-
-balance += 1
-adsWatched++
-
-updateUI()
-
-}catch{
-
-alert("No ad available")
-
-}
-
-}
-
-// ===== Adsgram Ad =====
-document.getElementById("adsgramBtn").onclick = ()=>{
+// ===== show ad =====
+document.getElementById("watchAd").onclick = ()=>{
 
 AdController.show()
 
@@ -161,9 +102,11 @@ AdController.show()
 if(result.done){
 
 balance += 1
-adsWatched++
+ads += 1
 
 updateUI()
+
+alert("You earned 1 MO")
 
 }
 
@@ -171,77 +114,9 @@ updateUI()
 
 .catch(()=>{
 
-alert("Ad error")
+alert("No ads available")
 
 })
-
-}
-
-// ===== Random code generator =====
-function generateCode(len=12){
-
-const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%"
-
-let code=""
-
-for(let i=0;i<len;i++){
-
-code += chars[Math.floor(Math.random()*chars.length)]
-
-}
-
-return code
-
-}
-
-// ===== Withdraw =====
-document.getElementById("withdrawBtn").onclick=()=>{
-
-if(balance < 10){
-
-alert("You need 10 MO")
-
-return
-
-}
-
-const phone = document.getElementById("phone").value
-
-// phone validation
-if(!/^012\d{8}$/.test(phone)){
-
-alert("sorry you don't inter the orange number")
-
-return
-
-}
-
-const password = prompt("Enter password")
-
-if(!password) return
-
-balance -= 10
-
-updateUI()
-
-const code = generateCode()
-
-const final = code + "_" + phone + "-" + password
-
-document.getElementById("withdrawCode").textContent =
-"Your Code:\n" + final
-
-const copyBtn = document.getElementById("copyBtn")
-
-copyBtn.classList.remove("hidden")
-
-copyBtn.onclick = ()=>{
-
-navigator.clipboard.writeText(final)
-
-alert("Copied")
-
-}
 
 }
 
