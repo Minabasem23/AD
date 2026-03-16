@@ -6,161 +6,113 @@
 <title>Mini MO Wallet</title>
 
 <!-- Monetag SDK -->
-<script src="//libtl.com/sdk.js"
-        data-zone="10638478"
-        data-sdk="show_10638478"></script>
+<script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
 
 <style>
-body{
-font-family:Arial;
-background:linear-gradient(135deg,#6a11cb,#2575fc);
-color:#fff;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
 }
-
-.wallet{
-background:rgba(0,0,0,0.4);
-padding:30px;
-border-radius:20px;
-width:340px;
-text-align:center;
+.wallet-container {
+  background: rgba(0,0,0,0.35);
+  padding: 25px;
+  border-radius: 20px;
+  width: 360px;
 }
-
-button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-background:#ffd700;
-font-weight:bold;
-cursor:pointer;
+h1,h2{text-align:center;}
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: #ffd700;
+  color: #222;
+  font-weight: bold;
 }
-
-button:hover{
-background:#ffee55;
-}
-
-button:disabled{
-background:#999;
-cursor:not-allowed;
-}
-
-#timer{
-margin-top:10px;
-font-size:14px;
-}
+button:hover { background: #ffec50; }
+.hidden { display: none; }
 </style>
 </head>
 
 <body>
+<div class="wallet-container">
+  <h2>Mini MO Wallet</h2>
 
-<div class="wallet">
+  <p>Balance: <b><span id="balance">0</span></b> MO</p>
+  <p>Ads watched: <span id="ads">0</span></p>
 
-<h2>Mini MO Wallet</h2>
-
-<p>Balance: <span id="balance">0</span> MO</p>
-<p>Ads watched: <span id="ads">0</span></p>
-
-<button id="watchAd">Watch Ad</button>
-<p id="timer"></p>
-
+  <button id="watchBtn">Watch Ad</button>
+  <p id="status" class="hidden"></p>
 </div>
 
 <script>
+// ===== إعداد LocalStorage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, adsWatched: 0 };
+let balance = wallet.balance;
+let adsWatched = wallet.adsWatched;
+document.getElementById("balance").textContent = balance;
+document.getElementById("ads").textContent = adsWatched;
 
-// ===== wallet storage =====
-let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-balance:0,
-ads:0
+// ===== متغيرات النظام =====
+const REWARD = 1;       // 1 MO لكل إعلان
+const MAX_ADS = 50;     // الحد الأقصى 50 إعلان
+const AD_TIME = 15000;  // 15 ثانية مؤقت
+
+// ===== تحديث الواجهة =====
+function updateUI() {
+  document.getElementById("balance").textContent = balance;
+  document.getElementById("ads").textContent = adsWatched;
+  localStorage.setItem("wallet", JSON.stringify({ balance, adsWatched }));
 }
 
-let balance = wallet.balance
-let ads = wallet.ads
+// ===== مشاهدة إعلان =====
+document.getElementById("watchBtn").onclick = async () => {
+  if(adsWatched >= MAX_ADS){
+    alert("✅ You reached the maximum ads per day (50)");
+    return;
+  }
 
-function updateUI(){
+  if(typeof show_10638478 !== "function"){
+    alert("SDK not loaded");
+    return;
+  }
 
-document.getElementById("balance").textContent = balance
-document.getElementById("ads").textContent = ads
+  const status = document.getElementById("status");
+  status.textContent = "⏳ Watching ad...";
+  status.classList.remove("hidden");
 
-localStorage.setItem("wallet",JSON.stringify({
-balance:balance,
-ads:ads
-}))
+  const adStart = Date.now();
+  try {
+    await show_10638478({ ymid: "ad_dummy" });
+  } catch {
+    status.textContent = "❌ No ad available";
+    setTimeout(()=>status.classList.add("hidden"),2000);
+    return;
+  }
 
-}
+  const watchedTime = Date.now() - adStart;
+  if(watchedTime < AD_TIME){
+    status.textContent = "❌ Your watch not completed";
+    setTimeout(()=>status.classList.add("hidden"),2000);
+    return;
+  }
 
-updateUI()
+  balance += REWARD;
+  adsWatched++;
+  updateUI();
 
-// ===== ad timing system =====
-let adStartTime = 0
-let waitingAd = false
-
-// ===== watch ad =====
-document.getElementById("watchAd").onclick = async ()=>{
-
-if(typeof show_10638478 !== "function"){
-alert("Ad SDK not loaded")
-return
-}
-
-const btn = document.getElementById("watchAd")
-const timerText = document.getElementById("timer")
-
-btn.disabled = true
-timerText.textContent = "Ad started... watch 15 seconds"
-
-adStartTime = Date.now()
-waitingAd = true
-
-try{
-
-await show_10638478({ ymid:"user_test" })
-
-}catch{
-
-btn.disabled = false
-timerText.textContent = "No ads available"
-waitingAd = false
-
-}
-
-}
-
-// ===== detect return to page =====
-document.addEventListener("visibilitychange", ()=>{
-
-if(!document.hidden && waitingAd){
-
-let seconds = (Date.now() - adStartTime) / 1000
-const btn = document.getElementById("watchAd")
-const timerText = document.getElementById("timer")
-
-if(seconds >= 15){
-
-balance += 1
-ads += 1
-updateUI()
-
-timerText.textContent = "Ad completed ✔ Reward added"
-
-}else{
-
-timerText.textContent = "Ad not completed ❌ watch full 15 seconds"
-
-}
-
-btn.disabled = false
-waitingAd = false
-
-}
-
-})
-
+  status.textContent = `✅ +${REWARD} MO`;
+  setTimeout(()=>status.classList.add("hidden"),2000);
+};
 </script>
-
 </body>
 </html>
