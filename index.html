@@ -39,26 +39,7 @@ button {
   font-weight: bold;
 }
 button:hover { background: #ffec50; }
-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  border: none;
-}
 .hidden { display: none; }
-pre {
-  background: rgba(255,255,255,0.1);
-  padding: 10px;
-  border-radius: 10px;
-  overflow-x: auto;
-}
-.copy-btn {
-  background: #00cc66;
-  color: #fff;
-  margin-top: 5px;
-}
-.copy-btn:hover { background: #00ff88; }
 </style>
 </head>
 
@@ -71,14 +52,6 @@ pre {
 
   <button id="watchBtn">Watch Ad</button>
   <p id="status" class="hidden"></p>
-
-  <hr>
-
-  <input type="number" id="withdrawAmount" placeholder="Enter phone number (N)">
-  <button id="withdrawBtn">Withdraw 10 MO</button>
-
-  <pre id="withdrawCode"></pre>
-  <button id="copyBtn" class="copy-btn hidden">Copy Code</button>
 </div>
 
 <script>
@@ -139,37 +112,6 @@ document.getElementById("watchBtn").onclick = async () => {
 
   status.textContent = `✅ +${REWARD} MO`;
   setTimeout(()=>status.classList.add("hidden"),2000);
-};
-
-// ===== سحب الرصيد =====
-const WITHDRAW_AMOUNT = 10;
-document.getElementById("withdrawBtn").onclick = () => {
-  if(balance < WITHDRAW_AMOUNT){
-    alert("رصيد غير كافي (10 MO required)");
-    return;
-  }
-
-  const phone = document.getElementById("withdrawAmount").value;
-  if(!phone){
-    alert("❌ ادخل رقم الهاتف (N)");
-    return;
-  }
-
-  const password = prompt("Enter password (P)");
-
-  balance -= WITHDRAW_AMOUNT;
-  updateUI();
-
-  const code = `Withdraw_${phone}-${password}`;
-  document.getElementById("withdrawCode").textContent = `Your Code: ${code}`;
-
-  const copyBtn = document.getElementById("copyBtn");
-  copyBtn.classList.remove("hidden");
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(code).then(()=> alert("✅ Code copied!"));
-  };
-
-  document.getElementById("withdrawAmount").value = "";
 };
 </script>
 </body>
