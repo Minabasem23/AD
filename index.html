@@ -43,6 +43,16 @@ cursor:pointer;
 button:hover{
 background:#ffee55;
 }
+
+button:disabled{
+background:#999;
+cursor:not-allowed;
+}
+
+#timer{
+margin-top:10px;
+font-size:14px;
+}
 </style>
 </head>
 
@@ -56,6 +66,7 @@ background:#ffee55;
 <p>Ads watched: <span id="ads">0</span></p>
 
 <button id="watchAd">Watch Ad</button>
+<p id="timer"></p>
 
 </div>
 
@@ -84,6 +95,10 @@ ads:ads
 
 updateUI()
 
+// ===== ad timing system =====
+let adStartTime = 0
+let waitingAd = false
+
 // ===== watch ad =====
 document.getElementById("watchAd").onclick = async ()=>{
 
@@ -92,22 +107,58 @@ alert("Ad SDK not loaded")
 return
 }
 
+const btn = document.getElementById("watchAd")
+const timerText = document.getElementById("timer")
+
+btn.disabled = true
+timerText.textContent = "Ad started... watch 15 seconds"
+
+adStartTime = Date.now()
+waitingAd = true
+
 try{
 
 await show_10638478({ ymid:"user_test" })
 
-balance += 1
-ads += 1
-
-updateUI()
-
 }catch{
 
-alert("No ads available")
+btn.disabled = false
+timerText.textContent = "No ads available"
+waitingAd = false
 
 }
 
 }
+
+// ===== detect return to page =====
+document.addEventListener("visibilitychange", ()=>{
+
+if(!document.hidden && waitingAd){
+
+let seconds = (Date.now() - adStartTime) / 1000
+const btn = document.getElementById("watchAd")
+const timerText = document.getElementById("timer")
+
+if(seconds >= 15){
+
+balance += 1
+ads += 1
+updateUI()
+
+timerText.textContent = "Ad completed ✔ Reward added"
+
+}else{
+
+timerText.textContent = "Ad not completed ❌ watch full 15 seconds"
+
+}
+
+btn.disabled = false
+waitingAd = false
+
+}
+
+})
 
 </script>
 
