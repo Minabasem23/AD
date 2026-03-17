@@ -64,7 +64,6 @@ document.getElementById("ads").textContent = adsWatched;
 
 // ===== متغيرات النظام =====
 const REWARD = 1;       // 1 MO لكل إعلان
-const MAX_ADS = 50;     // الحد الأقصى 50 إعلان
 const AD_TIME = 15000;  // 15 ثانية مؤقت
 
 // ===== تحديث الواجهة =====
@@ -76,11 +75,6 @@ function updateUI() {
 
 // ===== مشاهدة إعلان =====
 document.getElementById("watchBtn").onclick = async () => {
-  if(adsWatched >= MAX_ADS){
-    alert("✅ You reached the maximum ads per day (50)");
-    return;
-  }
-
   if(typeof show_10638478 !== "function"){
     alert("SDK not loaded");
     return;
