@@ -7,152 +7,106 @@
 
 <!-- Monetag SDK 1 -->
 <script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
-
 <!-- Monetag SDK 2 -->
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
 <style>
-body {
-  font-family: Arial;
-  background: linear-gradient(135deg,#6a11cb,#2575fc);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-.wallet {
-  background: rgba(0,0,0,0.4);
-  padding: 30px;
-  border-radius: 20px;
-  width: 340px;
-  text-align: center;
-}
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  background: #ffd700;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:disabled {
-  background: #999;
-}
+body { font-family: Arial; background: linear-gradient(135deg,#6a11cb,#2575fc); color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+.wallet { background: rgba(0,0,0,0.4); padding:30px; border-radius:20px; width:340px; text-align:center; }
+button { width:100%; padding:12px; margin:10px 0; border:none; border-radius:10px; background:#ffd700; font-weight:bold; cursor:pointer; }
+button:disabled { background:#999; }
 </style>
 </head>
-
 <body>
 
 <div class="wallet">
   <h2>Mini MO Wallet</h2>
-
   <p>Balance: <span id="balance">0</span> MO</p>
-  <p>Ads watched: <span id="ads">0</span></p>
+  <p>Ads watched 1: <span id="ads1">0</span></p>
+  <p>Ads watched 2: <span id="ads2">0</span></p>
 
-  <button id="watchBtn">Watch Ad</button>
-  <p id="status"></p>
+  <button id="watchAd1">Watch Ad 1</button>
+  <button id="watchAd2">Watch Ad 2</button>
 </div>
 
 <script>
+const MAX_ADS = 100;
+const REWARD = 1; // لكل إعلان
+const WAIT_TIME = 15000; // 15 ثانية
 
-// ===== Smartlinks =====
-const smartLinks = [
-  "https://omg10.com/4/10591369",
-  "https://omg10.com/4/10725699",
-  "https://omg10.com/4/10591326",
-  "https://omg10.com/4/10746516"
-];
-
-// ===== storage =====
+// ===== LocalStorage
 let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-  balance:0,
-  ads:0,
-  lastAd:1
+  balance:0, ads1:0, ads2:0
 };
 
 let balance = wallet.balance;
-let ads = wallet.ads;
-let lastAd = wallet.lastAd;
+let ads1 = wallet.ads1;
+let ads2 = wallet.ads2;
 
-const btn = document.getElementById("watchBtn");
-const status = document.getElementById("status");
-
+function updateUI() {
+  document.getElementById("balance").textContent = balance;
+  document.getElementById("ads1").textContent = ads1;
+  document.getElementById("ads2").textContent = ads2;
+  localStorage.setItem("wallet", JSON.stringify({balance, ads1, ads2}));
+}
 updateUI();
 
-function updateUI(){
-  document.getElementById("balance").textContent = balance;
-  document.getElementById("ads").textContent = ads;
-
-  localStorage.setItem("wallet",JSON.stringify({
-    balance,
-    ads,
-    lastAd
-  }));
+// ===== Ad Buttons =====
+document.getElementById("watchAd1").onclick = async ()=>{
+  if(ads1 >= MAX_ADS){
+    alert("🚫 Ad 1 limit reached");
+    return;
+  }
+  await watchAd("show_10638478", "ads1");
 }
 
-// ===== watch ad =====
-btn.onclick = async ()=>{
-
-  let adFunction;
-
-  // 🔁 تبديل الإعلانات
-  if(lastAd === 1){
-    adFunction = show_10638478;
-    lastAd = 2;
-  }else{
-    adFunction = show_10743949;
-    lastAd = 1;
+document.getElementById("watchAd2").onclick = async ()=>{
+  if(ads2 >= MAX_ADS){
+    alert("🚫 Ad 2 limit reached");
+    return;
   }
+  await watchAd("show_10743949", "ads2");
+}
 
-  if(typeof adFunction !== "function"){
-    alert("Ad not loaded");
+// ===== Watch Ad Function
+async function watchAd(sdkFuncName, adKey){
+  const sdkFunc = window[sdkFuncName];
+  if(typeof sdkFunc !== "function"){
+    alert("Ad SDK not loaded");
     return;
   }
 
+  const start = Date.now();
   try{
-    status.innerText = "⏳ Watching ad...";
-    btn.disabled = true;
-
-    const start = Date.now();
-
-    await adFunction({ ymid:"user_test" });
-
-    const time = Date.now() - start;
-
-    if(time < 15000){
-      status.innerText = "❌ Your watch not completed";
-      btn.disabled = false;
+    await sdkFunc({ ymid:"user_test" });
+    const timeWatched = Date.now() - start;
+    if(timeWatched < WAIT_TIME){
+      alert("❌ You must watch at least 15 seconds");
       return;
     }
 
-    // ✅ reward
-    balance += 1;
-    ads += 1;
+    // تحديث الرصيد
+    balance += REWARD;
+    wallet[adKey] += 1;
+    if(adKey==="ads1") ads1++;
+    else ads2++;
+
     updateUI();
 
-    status.innerText = "✅ +1 MO";
-
-    // 🎯 اختيار Smartlink عشوائي
-    const randomLink = smartLinks[Math.floor(Math.random() * smartLinks.length)];
-
-    // 🚀 فتح الرابط بعد ثانية
-    setTimeout(()=>{
-      window.open(randomLink, "_blank");
-    },1000);
-
-    btn.disabled = false;
+    // فتح SmartLink بعد الإعلان
+    const links = [
+      "https://omg10.com/4/10591369",
+      "https://omg10.com/4/10725699",
+      "https://omg10.com/4/10591326",
+      "https://omg10.com/4/10746516"
+    ];
+    const randomLink = links[Math.floor(Math.random()*links.length)];
+    window.open(randomLink, "_blank");
 
   }catch{
-    status.innerText = "❌ No ad available";
-    btn.disabled = false;
+    alert("❌ No ad available");
   }
-
-};
-
+}
 </script>
-
 </body>
 </html>
