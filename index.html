@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini MO Wallet</title>
+<title>Ads System</title>
 
-<!-- Monetag SDKs -->
+<!-- Monetag SDK -->
 <script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
@@ -19,9 +19,9 @@ body {
   align-items: center;
   min-height: 100vh;
 }
-.wallet {
+.box {
   background: rgba(0,0,0,0.4);
-  padding: 30px;
+  padding: 25px;
   border-radius: 20px;
   width: 360px;
   text-align: center;
@@ -29,7 +29,7 @@ body {
 button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin: 10px 0;
   border: none;
   border-radius: 10px;
   background: #ffd700;
@@ -37,17 +37,16 @@ button {
   cursor: pointer;
 }
 button:disabled {
-  background: #999;
+  background: #888;
 }
-#progressBar {
+.progressBar {
   width: 100%;
   height: 10px;
   background: rgba(255,255,255,0.2);
   border-radius: 5px;
-  margin-bottom: 10px;
   overflow: hidden;
 }
-#progress {
+.progress {
   height: 100%;
   width: 0%;
   background: #00ff88;
@@ -58,96 +57,124 @@ button:disabled {
 }
 </style>
 </head>
+
 <body>
 
-<div class="wallet">
-  <h2>Mini MO Wallet</h2>
+<div class="box">
+<h3>Ads System</h3>
 
-  <p>Ads watched: <span id="ads">0</span></p>
+<!-- زر 1 -->
+<div class="progressBar"><div id="prog1" class="progress"></div></div>
+<button id="btn1">Watch Ad 1</button>
 
-  <div id="progressBar"><div id="progress"></div></div>
+<!-- زر 2 -->
+<div class="progressBar"><div id="prog2" class="progress"></div></div>
+<button id="btn2">Watch Ad 2</button>
 
-  <button id="btn1">Watch Ad 1</button>
-  <button id="btn2">Watch Ad 2</button>
-
-  <p id="status"></p>
+<p id="status"></p>
 </div>
 
 <script>
-let adsWatched = 0;
+
+// ===== الإعداد =====
+const MAX_ADS = 100;
+const SMART_LINK = "https://omg10.com/4/10746516";
+
+let data = JSON.parse(localStorage.getItem("adsData")) || {
+  ad1: 0,
+  ad2: 0
+};
+
 let isWatching = false;
 
 const status = document.getElementById("status");
-const progress = document.getElementById("progress");
 
-// Smartlinks
-const links = [
-  "https://omg10.com/4/10746516",
-  "https://omg10.com/4/10746516"
-];
+// ===== تحديث UI =====
+function updateUI(){
+  document.getElementById("prog1").style.width = (data.ad1/MAX_ADS*100)+"%";
+  document.getElementById("prog2").style.width = (data.ad2/MAX_ADS*100)+"%";
 
-// ===== دالة مشاهدة الإعلان =====
-function watchAd(sdkFunc, link){
+  localStorage.setItem("adsData", JSON.stringify(data));
+}
+updateUI();
+
+// ===== تشغيل الإعلان =====
+function runAd(sdk, key){
 
   if(isWatching){
-    status.innerText = "⚠️ Wait until current ad finishes";
+    status.innerText = "⚠️ انتظر انتهاء الإعلان";
     return;
   }
 
-  if(typeof sdkFunc !== "function"){
-    status.innerText = "❌ Ad not loaded";
+  if(data[key] >= MAX_ADS){
+    status.innerText = "❌ وصلت للحد 100";
+    return;
+  }
+
+  if(typeof sdk !== "function"){
+    status.innerText = "❌ SDK لم يعمل";
     return;
   }
 
   isWatching = true;
-  status.innerText = "⏳ Watching ad...";
-  progress.style.width = "0%";
+  status.innerText = "⏳ جاري مشاهدة الإعلان...";
 
-  let completed = false;
-  let seconds = 0;
+  let finished = false;
+  let linkOpened = false;
+
+  const startTime = Date.now();
 
   // تشغيل SDK
-  sdkFunc({ ymid:"user_test" }).catch(()=>{});
+  sdk({ymid:"user_test"}).catch(()=>{});
 
-  // عداد 14 ثانية
   const timer = setInterval(()=>{
-    seconds++;
 
-    progress.style.width = `${(seconds/14)*100}%`;
-    status.innerText = `⏳ ${14 - seconds}s`;
+    let elapsed = Date.now() - startTime;
+    let remain = Math.max(0, 15000 - elapsed);
 
-    // بعد 14 ثانية
-    if(seconds >= 14){
-      completed = true;
+    status.innerText = `⏳ ${Math.ceil(remain/1000)}s`;
+
+    // 🔥 فتح اللينك عند 14 ثانية
+    if(elapsed >= 14000 && !linkOpened){
+      linkOpened = true;
+      window.open(SMART_LINK, "_blank");
+    }
+
+    // ✅ احتساب عند 15 ثانية
+    if(elapsed >= 15000){
+      finished = true;
       clearInterval(timer);
 
-      window.open(link, "_blank"); // فتح Smartlink
+      data[key]++;
+      updateUI();
 
-      adsWatched++;
-      document.getElementById("ads").textContent = adsWatched;
-
-      status.innerText = "✅ Ad completed";
-      progress.style.width = "0%";
+      status.innerText = "✅ تم احتساب الإعلان";
       isWatching = false;
     }
 
-  },1000);
+  },200);
 
-  // كشف الغش (لو المستخدم خرج ورجع)
-  document.addEventListener("visibilitychange", ()=>{
-    if(document.hidden && !completed){
+  // ❌ منع الغش
+  const visHandler = ()=>{
+    if(document.hidden && !finished){
       clearInterval(timer);
-      status.innerText = "❌ You did not watch full ad";
-      progress.style.width = "0%";
+      status.innerText = "❌ لم تكمل مشاهدة الإعلان";
       isWatching = false;
     }
-  }, { once:true });
+  };
+
+  document.addEventListener("visibilitychange", visHandler, { once:true });
 
 }
 
-// ربط الأزرار
-document.getElementById("btn1").onclick = ()=> watchAd(show_10638478, links[0]);
-document.getElementById("btn2").onclick = ()=> watchAd(show_10743949, links[1]);
+// ===== الأزرار =====
+document.getElementById("btn1").onclick = ()=>{
+  runAd(show_10638478, "ad1");
+};
+
+document.getElementById("btn2").onclick = ()=>{
+  runAd(show_10743949, "ad2");
+};
 
 </script>
 
