@@ -57,17 +57,14 @@ button:disabled {
 }
 </style>
 </head>
-
 <body>
 
 <div class="box">
 <h3>Ads System</h3>
 
-<!-- زر 1 -->
 <div class="progressBar"><div id="prog1" class="progress"></div></div>
 <button id="btn1">Watch Ad 1</button>
 
-<!-- زر 2 -->
 <div class="progressBar"><div id="prog2" class="progress"></div></div>
 <button id="btn2">Watch Ad 2</button>
 
@@ -75,43 +72,30 @@ button:disabled {
 </div>
 
 <script>
-
-// ===== الإعداد =====
 const MAX_ADS = 100;
 const SMART_LINK = "https://omg10.com/4/10746516";
 
-let data = JSON.parse(localStorage.getItem("adsData")) || {
-  ad1: 0,
-  ad2: 0
-};
-
+let data = JSON.parse(localStorage.getItem("adsData")) || { ad1:0, ad2:0 };
 let isWatching = false;
-
 const status = document.getElementById("status");
 
-// ===== تحديث UI =====
 function updateUI(){
   document.getElementById("prog1").style.width = (data.ad1/MAX_ADS*100)+"%";
   document.getElementById("prog2").style.width = (data.ad2/MAX_ADS*100)+"%";
-
   localStorage.setItem("adsData", JSON.stringify(data));
 }
 updateUI();
 
-// ===== تشغيل الإعلان =====
 function runAd(sdk, key){
-
   if(isWatching){
     status.innerText = "⚠️ انتظر انتهاء الإعلان";
     return;
   }
-
-  if(data[key] >= MAX_ADS){
+  if(data[key]>=MAX_ADS){
     status.innerText = "❌ وصلت للحد 100";
     return;
   }
-
-  if(typeof sdk !== "function"){
+  if(typeof sdk!=="function"){
     status.innerText = "❌ SDK لم يعمل";
     return;
   }
@@ -119,66 +103,45 @@ function runAd(sdk, key){
   isWatching = true;
   status.innerText = "⏳ جاري مشاهدة الإعلان...";
 
-  let finished = false;
-
   const startTime = Date.now();
 
-  // 🔥 فتح نافذة فاضية (حل popup blocker)
-  let adWindow = window.open("", "_blank");
+  // فتح نافذة الرابط بعد 13 ثانية
+  const linkTimer = setTimeout(()=>{
+    window.open(SMART_LINK,"_blank");
+  },13000);
 
-  // تشغيل SDK
-  sdk({ymid:"user_test"}).catch(()=>{});
+  sdk({ymid:"user_test"}).catch(()=>{
+    clearTimeout(linkTimer);
+    status.innerText = "❌ فشل الإعلان";
+    isWatching = false;
+  });
 
-  const timer = setInterval(()=>{
-
+  const checkTimer = setInterval(()=>{
     let elapsed = Date.now() - startTime;
-    let remain = Math.max(0, 15000 - elapsed);
-
-    status.innerText = `⏳ ${Math.ceil(remain/1000)}s`;
-
-    // 🔥 فتح اللينك عند 13 ثانية
-    if(elapsed >= 13000 && adWindow){
-      adWindow.location.href = SMART_LINK;
-      adWindow.focus();
-    }
-
-    // ✅ احتساب عند 15 ثانية
-    if(elapsed >= 15000){
-      finished = true;
-      clearInterval(timer);
-
+    if(elapsed>=15000){
+      clearInterval(checkTimer);
       data[key]++;
       updateUI();
-
       status.innerText = "✅ تم احتساب الإعلان";
       isWatching = false;
     }
-
   },200);
 
-  // ❌ منع الغش
+  // منع الغش
   const visHandler = ()=>{
-    if(document.hidden && !finished){
-      clearInterval(timer);
+    if(document.hidden && isWatching){
+      clearInterval(checkTimer);
+      clearTimeout(linkTimer);
       status.innerText = "❌ لم تكمل مشاهدة الإعلان";
       isWatching = false;
     }
   };
-
-  document.addEventListener("visibilitychange", visHandler, { once:true });
-
+  document.addEventListener("visibilitychange", visHandler, {once:true});
 }
 
-// ===== الأزرار =====
-document.getElementById("btn1").onclick = ()=>{
-  runAd(show_10638478, "ad1");
-};
-
-document.getElementById("btn2").onclick = ()=>{
-  runAd(show_10743949, "ad2");
-};
+document.getElementById("btn1").onclick = ()=> runAd(show_10638478,"ad1");
+document.getElementById("btn2").onclick = ()=> runAd(show_10743949,"ad2");
 
 </script>
-
 </body>
 </html>
