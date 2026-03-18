@@ -3,73 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Wallet Ads + Promo</title>
+<title>Mini Wallet with Ads & SmartLink</title>
 
 <!-- Monetag SDK 1 -->
 <script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
+
 <!-- Monetag SDK 2 -->
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
 <style>
-body { font-family: Arial; background: linear-gradient(135deg,#6a11cb,#2575fc); color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; }
-.wallet { background: rgba(0,0,0,0.4); padding:30px; border-radius:20px; width:360px; text-align:center; }
-button { width:100%; padding:12px; margin:10px 0; border:none; border-radius:10px; background:#ffd700; font-weight:bold; cursor:pointer; }
-button:disabled { background:#999; }
-.progress { width:100%; height:5px; background:#222; border-radius:5px; margin-bottom:5px; overflow:hidden; }
-.progress-bar { height:100%; width:0%; background:#00ff88; transition: width 0.1s; }
-input { width:100%; padding:8px; margin:10px 0; border-radius:8px; border:none; }
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#6a11cb,#2575fc);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.wallet {
+  background: rgba(0,0,0,0.4);
+  padding: 30px;
+  border-radius: 20px;
+  width: 360px;
+  text-align: center;
+}
+
+h2 { margin-bottom: 20px; }
+
+.balance, .ads { margin: 10px 0; }
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #ffd700;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.progress-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  margin: 5px 0 15px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #00ff88;
+  transition: width 0.1s linear;
+}
 </style>
 </head>
 <body>
 
 <div class="wallet">
   <h2>Mini Wallet</h2>
+  <p class="balance">Balance: <span id="balance">0</span></p>
+  <p class="ads">Ads watched: <span id="ads">0</span></p>
 
-  <p>Balance: <span id="balance">0</span></p>
-  <p>Ads watched 1: <span id="ads1">0</span></p>
-  <p>Ads watched 2: <span id="ads2">0</span></p>
+  <div>
+    <button id="adBtn1">Watch Ad 1</button>
+    <div class="progress-container"><div id="progress1" class="progress-bar"></div></div>
+  </div>
 
-  <input type="text" id="promoCode" placeholder="Enter Promo Code">
-  <button id="applyPromo">Apply Promo</button>
+  <div>
+    <button id="adBtn2">Watch Ad 2</button>
+    <div class="progress-container"><div id="progress2" class="progress-bar"></div></div>
+  </div>
 
-  <div class="progress"><div id="progress1" class="progress-bar"></div></div>
-  <button id="watchAd1">Watch Ad 1</button>
-
-  <div class="progress"><div id="progress2" class="progress-bar"></div></div>
-  <button id="watchAd2">Watch Ad 2</button>
 </div>
 
 <script>
-let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-  balance:0, ads1:0, ads2:0, maxAds:100
-};
-
-let balance = wallet.balance;
-let ads1 = wallet.ads1;
-let ads2 = wallet.ads2;
-let maxAds = wallet.maxAds;
-
-function updateUI(){
-  document.getElementById("balance").textContent = balance;
-  document.getElementById("ads1").textContent = ads1;
-  document.getElementById("ads2").textContent = ads2;
-  localStorage.setItem("wallet", JSON.stringify({balance, ads1, ads2, maxAds}));
-}
-updateUI();
-
-// ===== Promo Code =====
-document.getElementById("applyPromo").onclick = ()=>{
-  const code = document.getElementById("promoCode").value.trim().toUpperCase();
-  if(code==="MINANL"){ maxAds = Infinity; alert("✅ No ads limit"); }
-  else if(code==="MINAYL"){ maxAds = 100; alert("✅ Normal ads limit"); }
-  else if(code==="ADS100"){ ads1 += 10; ads2 += 10; alert("✅ Added 10 ads each"); }
-  else { alert("❌ Invalid promo code"); }
-  updateUI();
-}
-
-// ===== Ad Function =====
 const REWARD = 1;
-const WAIT_TIME = 15000;
+const WAIT_TIME = 15000; // 15s
 const links = [
   "https://omg10.com/4/10591369",
   "https://omg10.com/4/10725699",
@@ -77,53 +97,76 @@ const links = [
   "https://omg10.com/4/10746516"
 ];
 
-async function watchAd(sdkFuncName, adKey, progressBar){
-  const sdkFunc = window[sdkFuncName];
-  if(typeof sdkFunc !== "function"){ alert("Ad SDK not loaded"); return; }
+// ===== Storage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, ads: 0, lastAd: 1 };
+let balance = wallet.balance;
+let ads = wallet.ads;
+let lastAd = wallet.lastAd;
 
-  if(wallet[adKey] >= maxAds){ alert("🚫 Max ads reached"); return; }
+// ===== Update UI =====
+function updateUI(){
+  document.getElementById("balance").textContent = balance;
+  document.getElementById("ads").textContent = ads;
+  localStorage.setItem("wallet", JSON.stringify({ balance, ads, lastAd }));
+}
 
-  const btn = document.getElementById("watch"+adKey);
+// ===== Watch Ad Function =====
+async function watchAd(sdkFuncName, progressBarId){
+  const btn = document.getElementById("adBtn" + progressBarId);
+  const progressBar = document.getElementById("progress" + progressBarId);
+
+  if(typeof window[sdkFuncName] !== "function"){
+    alert("🚫 Ad SDK not loaded yet");
+    return;
+  }
+
   btn.disabled = true;
+  const start = Date.now();
 
-  let startTime = Date.now();
   let interval = setInterval(()=>{
-    let elapsed = Date.now()-startTime;
-    let percent = Math.min(100, (elapsed/WAIT_TIME)*100);
-    progressBar.style.width = percent+"%";
-  },50);
+    const elapsed = Date.now() - start;
+    let percent = Math.min(100, (elapsed / WAIT_TIME) * 100);
+    progressBar.style.width = percent + "%";
+  }, 50);
 
-  try{
-    await sdkFunc({ ymid:"user_test" });
+  try {
+    await window[sdkFuncName]({ ymid: "user_test" });
+    const timeWatched = Date.now() - start;
 
     clearInterval(interval);
     progressBar.style.width = "0%";
-    const timeWatched = Date.now() - startTime;
-    if(timeWatched < WAIT_TIME){ alert("❌ Watch at least 15s"); btn.disabled=false; return; }
 
+    if(timeWatched < WAIT_TIME){
+      alert("❌ You must watch the ad for 15 seconds");
+      btn.disabled = false;
+      return;
+    }
+
+    // ✅ Add reward
     balance += REWARD;
-    wallet[adKey] += 1;
-    if(adKey==="ads1") ads1++; else ads2++;
+    ads += 1;
     updateUI();
 
+    // Open SmartLink
     const randomLink = links[Math.floor(Math.random()*links.length)];
-    window.open(randomLink,"_blank");
-    btn.disabled=false;
-  }catch{
+    window.open(randomLink, "_blank");
+
+    alert(`✅ +${REWARD} MO`);
+
+  } catch {
     clearInterval(interval);
     progressBar.style.width="0%";
-    alert("❌ No ad available"); btn.disabled=false;
+    alert("❌ No ad available");
+  } finally {
+    btn.disabled = false;
   }
 }
 
 // ===== Buttons =====
-document.getElementById("watchAd1").onclick = ()=>{
-  watchAd("show_10638478","ads1",document.getElementById("progress1"));
-}
-document.getElementById("watchAd2").onclick = ()=>{
-  watchAd("show_10743949","ads2",document.getElementById("progress2"));
-}
-</script>
+document.getElementById("adBtn1").onclick = () => watchAd('show_10638478', 1);
+document.getElementById("adBtn2").onclick = () => watchAd('show_10743949', 2);
 
+updateUI();
+</script>
 </body>
 </html>
