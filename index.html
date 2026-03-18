@@ -102,41 +102,33 @@ function runAd(sdk, key){
 
   isWatching = true;
   status.innerText = "⏳ جاري مشاهدة الإعلان...";
-
-  const startTime = Date.now();
   let adCompleted = false;
 
-  // فتح SDK
-  sdk({ymid:"user_test"}).catch(()=>{
-    status.innerText = "❌ فشل الإعلان";
-    isWatching = false;
-  });
-
-  // مراقبة التبويب لتجنب الغش
   const visibilityHandler = () => {
     if(document.hidden && !adCompleted){
-      status.innerText = "❌ لم تكمل مشاهدة الإعلان";
-      isWatching = false;
-      document.removeEventListener("visibilitychange", visibilityHandler);
+      status.innerText = "⚠️ خرجت قبل انتهاء الإعلان";
     }
   };
   document.addEventListener("visibilitychange", visibilityHandler);
 
-  // بعد 15 ثانية نحتسب الإعلان ونعطي الرابط
-  setTimeout(()=>{
-    if(!isWatching) return;
+  sdk({ymid:"user_test"}).then(()=>{
     adCompleted = true;
     data[key]++;
     updateUI();
-    status.innerText = "✅ تم احتساب الإعلان وفتح الرابط";
-    isWatching = false;
+    status.innerText = "✅ شاهدت الإعلان بالكامل، تم احتساب الإعلان!";
+  }).catch(()=>{
+    status.innerText = "❌ فشل الإعلان";
+  }).finally(()=>{
+    // الرابط يُفتح دائمًا سواء أكمل المستخدم أو لا
     window.open(SMART_LINK,"_blank");
+    isWatching = false;
     document.removeEventListener("visibilitychange", visibilityHandler);
-  },15000);
+  });
 }
 
 document.getElementById("btn1").onclick = ()=> runAd(show_10638478,"ad1");
 document.getElementById("btn2").onclick = ()=> runAd(show_10743949,"ad2");
 </script>
+
 </body>
 </html>
