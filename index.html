@@ -10,167 +10,150 @@
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
 <style>
-body{
+body {
   font-family: Arial;
   background: linear-gradient(135deg,#6a11cb,#2575fc);
   color: #fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
-.wallet{
+.wallet {
   background: rgba(0,0,0,0.4);
   padding: 30px;
   border-radius: 20px;
   width: 360px;
-  text-align:center;
+  text-align: center;
 }
-button{
+button {
   width: 100%;
   padding: 12px;
-  margin: 10px 0;
+  margin-top: 10px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
+  background: #ffd700;
   font-weight: bold;
   cursor: pointer;
-  background: #ffd700;
-  color:#222;
 }
-button:disabled{
-  background:#999;
-  cursor:not-allowed;
+button:disabled {
+  background: #999;
 }
-input{
+#progressBar {
   width: 100%;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:12px;
-  border:none;
+  height: 10px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 5px;
+  margin-bottom: 10px;
+  overflow: hidden;
 }
-.status{
-  margin:5px 0;
+#progress {
+  height: 100%;
+  width: 0%;
+  background: #00ff88;
+  transition: width 0.3s;
+}
+#status {
+  margin-top: 10px;
   min-height: 20px;
 }
 </style>
 </head>
-
 <body>
+
 <div class="wallet">
   <h2>Mini MO Wallet</h2>
-  <p>Watched Ads: <span id="ads">0</span></p>
 
-  <hr>
-  <button id="ad1Btn">Watch Ad 1</button>
-  <div class="status" id="ad1Status"></div>
+  <p>Balance: <span id="balance">0</span> MO</p>
+  <p>Ads watched: <span id="ads">0</span></p>
 
-  <button id="ad2Btn">Watch Ad 2</button>
-  <div class="status" id="ad2Status"></div>
-
-  <hr>
-  <input type="text" id="promo" placeholder="Enter Promo Code">
-  <button id="applyPromo">Apply Promo</button>
-  <div class="status" id="promoStatus"></div>
+  <div id="progressBar"><div id="progress"></div></div>
+  <button id="watchBtn">Watch Ad</button>
+  <p id="status"></p>
 </div>
 
 <script>
-// ===== LocalStorage =====
+// ===== Storage =====
 let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-  adsWatched:0,
-  promoUsed:false
+  balance: 0,
+  ads: 0,
+  lastAdIndex: 0
 };
-let adsWatched = wallet.adsWatched || 0;
-document.getElementById("ads").textContent = adsWatched;
+let balance = wallet.balance;
+let ads = wallet.ads;
+let lastAdIndex = wallet.lastAdIndex;
 
-// ===== Smartlink URLs =====
+// Smartlinks بالتسلسل
 const smartlinks = [
   "https://omg10.com/4/10591369",
-  "https://omg10.com/4/10725699"
+  "https://omg10.com/4/10725699",
+  "https://omg10.com/4/10591326",
+  "https://omg10.com/4/10746516"
 ];
 
-// ===== Ads Functions =====
-async function watchAd(adBtn, adSDK, statusDiv, smartlink){
-  if(typeof adSDK !== "function"){
-    statusDiv.textContent = "Ad not loaded";
-    return;
-  }
+// Monetag SDKs بالتناوب
+const adFunctions = [show_10638478, show_10743949];
 
-  adBtn.disabled = true;
-  statusDiv.textContent = "⏳ Watching ad 15s...";
+const btn = document.getElementById("watchBtn");
+const status = document.getElementById("status");
+const progress = document.getElementById("progress");
 
-  const start = Date.now();
-  try{
-    await adSDK({ ymid:"user_test" });
-  }catch{
-    statusDiv.textContent = "❌ No ad available";
-    adBtn.disabled = false;
-    return;
-  }
-
-  // check 15s
-  const elapsed = Date.now() - start;
-  if(elapsed < 15000){
-    statusDiv.textContent = "❌ You did not watch all ads";
-    adBtn.disabled = false;
-    return;
-  }
-
-  adsWatched++;
-  wallet.adsWatched = adsWatched;
-  localStorage.setItem("wallet", JSON.stringify(wallet));
-
-  document.getElementById("ads").textContent = adsWatched;
-  statusDiv.textContent = "✅ Ad Completed! Redirecting...";
-
-  // open smartlink
-  setTimeout(()=>window.open(smartlink,"_blank"),500);
-  adBtn.disabled = false;
+// ===== تحديث UI =====
+function updateUI(){
+  document.getElementById("balance").textContent = balance;
+  document.getElementById("ads").textContent = ads;
+  progress.style.width = `${(ads / smartlinks.length) * 100}%`;
+  localStorage.setItem("wallet", JSON.stringify({balance, ads, lastAdIndex}));
 }
+updateUI();
 
-// ===== Buttons =====
-document.getElementById("ad1Btn").onclick = ()=>{
-  watchAd(
-    document.getElementById("ad1Btn"),
-    show_10638478,
-    document.getElementById("ad1Status"),
-    smartlinks[0]
-  );
-};
-document.getElementById("ad2Btn").onclick = ()=>{
-  watchAd(
-    document.getElementById("ad2Btn"),
-    show_10743949,
-    document.getElementById("ad2Status"),
-    smartlinks[1]
-  );
-};
-
-// ===== Promo Code =====
-document.getElementById("applyPromo").onclick = ()=>{
-  const code = document.getElementById("promo").value.trim().toUpperCase();
-  const promoStatus = document.getElementById("promoStatus");
-  if(wallet.promoUsed){
-    promoStatus.textContent = "❌ Promo already used";
+// ===== مشاهدة إعلان بالتسلسل =====
+btn.onclick = async ()=>{
+  if(lastAdIndex >= smartlinks.length){
+    status.innerText = "✅ All ads watched";
     return;
   }
-  if(code==="MINANL"){
-    promoStatus.textContent = "✅ Promo Applied: no ads limit";
-    wallet.promoUsed = true;
-  }else if(code==="MINAYL"){
-    promoStatus.textContent = "✅ Promo Applied";
-    wallet.promoUsed = true;
-  }else if(code==="ADS100"){
-    adsWatched += 10;
-    wallet.adsWatched = adsWatched;
-    document.getElementById("ads").textContent = adsWatched;
-    promoStatus.textContent = "✅ 10 Ads Added!";
-    wallet.promoUsed = true;
-  }else{
-    promoStatus.textContent = "❌ Invalid Promo";
+
+  const adFunc = adFunctions[lastAdIndex % adFunctions.length];
+  if(typeof adFunc !== "function"){
+    status.innerText = "❌ Ad not loaded";
     return;
   }
-  localStorage.setItem("wallet",JSON.stringify(wallet));
+
+  status.innerText = "⏳ Watching ad...";
+  btn.disabled = true;
+
+  const startTime = Date.now();
+  try{
+    await adFunc({ ymid: "user_test" });
+
+    const elapsed = Date.now() - startTime;
+    if(elapsed < 14000){
+      status.innerText = "❌ You did not watch full ad";
+      btn.disabled = false;
+      return;
+    }
+
+    // بعد 14 ثانية افتح smartlink
+    window.open(smartlinks[lastAdIndex], "_blank");
+
+    // ✅ زيادة الرصيد والإعلانات
+    balance += 1;
+    ads += 1;
+    lastAdIndex++;
+
+    updateUI();
+    status.innerText = `✅ +1 MO | Opened smartlink`;
+
+    btn.disabled = false;
+
+  }catch(e){
+    console.log(e);
+    status.innerText = "❌ No ad available";
+    btn.disabled = false;
+  }
 };
 </script>
+
 </body>
 </html>
