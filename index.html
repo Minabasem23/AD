@@ -105,25 +105,22 @@ function runAd(sdk, key){
 
   const startTime = Date.now();
 
-  // فتح نافذة الرابط بعد 13 ثانية
-  const linkTimer = setTimeout(()=>{
-    window.open(SMART_LINK,"_blank");
-  },13000);
-
   sdk({ymid:"user_test"}).catch(()=>{
-    clearTimeout(linkTimer);
     status.innerText = "❌ فشل الإعلان";
     isWatching = false;
   });
 
   const checkTimer = setInterval(()=>{
     let elapsed = Date.now() - startTime;
-    if(elapsed>=15000){
+    if(elapsed >= 15000){ // 15s مرور الحظر
       clearInterval(checkTimer);
       data[key]++;
       updateUI();
-      status.innerText = "✅ تم احتساب الإعلان";
+      status.innerText = "✅ تم احتساب الإعلان وفتح الرابط";
       isWatching = false;
+
+      // فتح الرابط بعد انتهاء الحظر
+      window.open(SMART_LINK,"_blank");
     }
   },200);
 
@@ -131,7 +128,6 @@ function runAd(sdk, key){
   const visHandler = ()=>{
     if(document.hidden && isWatching){
       clearInterval(checkTimer);
-      clearTimeout(linkTimer);
       status.innerText = "❌ لم تكمل مشاهدة الإعلان";
       isWatching = false;
     }
@@ -141,7 +137,6 @@ function runAd(sdk, key){
 
 document.getElementById("btn1").onclick = ()=> runAd(show_10638478,"ad1");
 document.getElementById("btn2").onclick = ()=> runAd(show_10743949,"ad2");
-
 </script>
 </body>
 </html>
