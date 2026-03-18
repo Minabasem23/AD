@@ -124,6 +124,9 @@ function runAd(sdk, key){
 
   const startTime = Date.now();
 
+  // 🔥 فتح نافذة فاضية (حل popup blocker)
+  let adWindow = window.open("", "_blank");
+
   // تشغيل SDK
   sdk({ymid:"user_test"}).catch(()=>{});
 
@@ -134,10 +137,13 @@ function runAd(sdk, key){
 
     status.innerText = `⏳ ${Math.ceil(remain/1000)}s`;
 
-    // 🔥 فتح اللينك عند 14 ثانية
+    // 🔥 فتح اللينك عند 14 ثانية (بشكل مضمون)
     if(elapsed >= 14000 && !linkOpened){
       linkOpened = true;
-      window.open(SMART_LINK, "_blank");
+
+      if(adWindow){
+        adWindow.location.href = SMART_LINK;
+      }
     }
 
     // ✅ احتساب عند 15 ثانية
