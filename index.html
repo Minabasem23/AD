@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ads System</title>
+<title>Ads System Fixed</title>
 
-<!-- Monetag SDK -->
+<!-- Monetag SDKs -->
 <script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
@@ -104,35 +104,35 @@ function runAd(sdk, key){
   status.innerText = "⏳ جاري مشاهدة الإعلان...";
 
   const startTime = Date.now();
+  let adCompleted = false;
 
+  // فتح SDK
   sdk({ymid:"user_test"}).catch(()=>{
     status.innerText = "❌ فشل الإعلان";
     isWatching = false;
   });
 
-  const checkTimer = setInterval(()=>{
-    let elapsed = Date.now() - startTime;
-    if(elapsed >= 15000){ // 15s مرور الحظر
-      clearInterval(checkTimer);
-      data[key]++;
-      updateUI();
-      status.innerText = "✅ تم احتساب الإعلان وفتح الرابط";
-      isWatching = false;
-
-      // فتح الرابط بعد انتهاء الحظر
-      window.open(SMART_LINK,"_blank");
-    }
-  },200);
-
-  // منع الغش
-  const visHandler = ()=>{
-    if(document.hidden && isWatching){
-      clearInterval(checkTimer);
+  // مراقبة التبويب لتجنب الغش
+  const visibilityHandler = () => {
+    if(document.hidden && !adCompleted){
       status.innerText = "❌ لم تكمل مشاهدة الإعلان";
       isWatching = false;
+      document.removeEventListener("visibilitychange", visibilityHandler);
     }
   };
-  document.addEventListener("visibilitychange", visHandler, {once:true});
+  document.addEventListener("visibilitychange", visibilityHandler);
+
+  // بعد 15 ثانية نحتسب الإعلان ونعطي الرابط
+  setTimeout(()=>{
+    if(!isWatching) return;
+    adCompleted = true;
+    data[key]++;
+    updateUI();
+    status.innerText = "✅ تم احتساب الإعلان وفتح الرابط";
+    isWatching = false;
+    window.open(SMART_LINK,"_blank");
+    document.removeEventListener("visibilitychange", visibilityHandler);
+  },15000);
 }
 
 document.getElementById("btn1").onclick = ()=> runAd(show_10638478,"ad1");
