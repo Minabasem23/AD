@@ -3,196 +3,174 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Wallet with Ads & Promo</title>
+<title>Mini MO Wallet</title>
 
-<!-- Monetag SDK 1 -->
+<!-- Monetag SDKs -->
 <script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
-<!-- Monetag SDK 2 -->
 <script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
 
 <style>
-body {
+body{
   font-family: Arial;
   background: linear-gradient(135deg,#6a11cb,#2575fc);
   color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 20px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
 }
-
-.wallet {
+.wallet{
   background: rgba(0,0,0,0.4);
   padding: 30px;
   border-radius: 20px;
   width: 360px;
-  text-align: center;
+  text-align:center;
 }
-
-h2 { margin-bottom: 15px; }
-
-.balance, .ads { margin: 10px 0; }
-
-button {
+button{
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin: 10px 0;
   border: none;
-  border-radius: 10px;
-  background: #ffd700;
+  border-radius: 12px;
   font-weight: bold;
   cursor: pointer;
+  background: #ffd700;
+  color:#222;
 }
-
-button:disabled { background: #999; cursor: not-allowed; }
-
-.progress-container {
+button:disabled{
+  background:#999;
+  cursor:not-allowed;
+}
+input{
   width: 100%;
-  height: 8px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 4px;
-  margin: 5px 0 15px;
-  overflow: hidden;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:12px;
+  border:none;
 }
-
-.progress-bar {
-  width: 0%;
-  height: 100%;
-  background: #00ff88;
-  transition: width 0.1s linear;
+.status{
+  margin:5px 0;
+  min-height: 20px;
 }
-
-#promoContainer { margin-top: 20px; }
 </style>
 </head>
+
 <body>
-
 <div class="wallet">
-  <h2>Mini Wallet</h2>
-  <p class="balance">Balance: <span id="balance">0</span></p>
-  <p class="ads">Ads watched: <span id="ads">0</span></p>
+  <h2>Mini MO Wallet</h2>
+  <p>Watched Ads: <span id="ads">0</span></p>
 
-  <div>
-    <button id="adBtn1">Watch Ad 1</button>
-    <div class="progress-container"><div id="progress1" class="progress-bar"></div></div>
-  </div>
+  <hr>
+  <button id="ad1Btn">Watch Ad 1</button>
+  <div class="status" id="ad1Status"></div>
 
-  <div>
-    <button id="adBtn2">Watch Ad 2</button>
-    <div class="progress-container"><div id="progress2" class="progress-bar"></div></div>
-  </div>
+  <button id="ad2Btn">Watch Ad 2</button>
+  <div class="status" id="ad2Status"></div>
 
-  <div id="promoContainer">
-    <input type="text" id="promoCode" placeholder="Enter Promo Code" />
-    <button id="applyPromo">Apply Promo</button>
-  </div>
+  <hr>
+  <input type="text" id="promo" placeholder="Enter Promo Code">
+  <button id="applyPromo">Apply Promo</button>
+  <div class="status" id="promoStatus"></div>
 </div>
 
 <script>
-const REWARD = 1;
-const WAIT_TIME = 15000; // 15s
-const links = [
+// ===== LocalStorage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || {
+  adsWatched:0,
+  promoUsed:false
+};
+let adsWatched = wallet.adsWatched || 0;
+document.getElementById("ads").textContent = adsWatched;
+
+// ===== Smartlink URLs =====
+const smartlinks = [
   "https://omg10.com/4/10591369",
-  "https://omg10.com/4/10725699",
-  "https://omg10.com/4/10591326",
-  "https://omg10.com/4/10746516"
+  "https://omg10.com/4/10725699"
 ];
 
-// ===== Storage =====
-let wallet = JSON.parse(localStorage.getItem("wallet")) || { balance: 0, ads: 0, usedPromo: false };
-let balance = wallet.balance;
-let ads = wallet.ads;
-let usedPromo = wallet.usedPromo;
-
-// ===== Update UI =====
-function updateUI(){
-  document.getElementById("balance").textContent = balance;
-  document.getElementById("ads").textContent = ads;
-  localStorage.setItem("wallet", JSON.stringify({ balance, ads, usedPromo }));
-}
-
-// ===== Watch Ad Function =====
-async function watchAd(sdkFuncName, progressBarId){
-  const btn = document.getElementById("adBtn" + progressBarId);
-  const progressBar = document.getElementById("progress" + progressBarId);
-
-  if(typeof window[sdkFuncName] !== "function"){
-    alert("🚫 Ad SDK not loaded yet");
+// ===== Ads Functions =====
+async function watchAd(adBtn, adSDK, statusDiv, smartlink){
+  if(typeof adSDK !== "function"){
+    statusDiv.textContent = "Ad not loaded";
     return;
   }
 
-  btn.disabled = true;
+  adBtn.disabled = true;
+  statusDiv.textContent = "⏳ Watching ad 15s...";
+
   const start = Date.now();
-
-  let interval = setInterval(()=>{
-    const elapsed = Date.now() - start;
-    let percent = Math.min(100, (elapsed / WAIT_TIME) * 100);
-    progressBar.style.width = percent + "%";
-  }, 50);
-
-  try {
-    await window[sdkFuncName]({ ymid: "user_test" });
-    const timeWatched = Date.now() - start;
-
-    clearInterval(interval);
-    progressBar.style.width = "0%";
-
-    if(timeWatched < WAIT_TIME){
-      alert("❌ You must watch the ad for 15 seconds");
-      btn.disabled = false;
-      return;
-    }
-
-    // ✅ Add reward
-    balance += REWARD;
-    ads += 1;
-    updateUI();
-
-    // Open SmartLink
-    const randomLink = links[Math.floor(Math.random()*links.length)];
-    window.open(randomLink, "_blank");
-
-    alert(`✅ +${REWARD} Ads count`);
-
-  } catch {
-    clearInterval(interval);
-    progressBar.style.width="0%";
-    alert("❌ No ad available");
-  } finally {
-    btn.disabled = false;
+  try{
+    await adSDK({ ymid:"user_test" });
+  }catch{
+    statusDiv.textContent = "❌ No ad available";
+    adBtn.disabled = false;
+    return;
   }
+
+  // check 15s
+  const elapsed = Date.now() - start;
+  if(elapsed < 15000){
+    statusDiv.textContent = "❌ You did not watch all ads";
+    adBtn.disabled = false;
+    return;
+  }
+
+  adsWatched++;
+  wallet.adsWatched = adsWatched;
+  localStorage.setItem("wallet", JSON.stringify(wallet));
+
+  document.getElementById("ads").textContent = adsWatched;
+  statusDiv.textContent = "✅ Ad Completed! Redirecting...";
+
+  // open smartlink
+  setTimeout(()=>window.open(smartlink,"_blank"),500);
+  adBtn.disabled = false;
 }
 
 // ===== Buttons =====
-document.getElementById("adBtn1").onclick = () => watchAd('show_10638478', 1);
-document.getElementById("adBtn2").onclick = () => watchAd('show_10743949', 2);
+document.getElementById("ad1Btn").onclick = ()=>{
+  watchAd(
+    document.getElementById("ad1Btn"),
+    show_10638478,
+    document.getElementById("ad1Status"),
+    smartlinks[0]
+  );
+};
+document.getElementById("ad2Btn").onclick = ()=>{
+  watchAd(
+    document.getElementById("ad2Btn"),
+    show_10743949,
+    document.getElementById("ad2Status"),
+    smartlinks[1]
+  );
+};
 
 // ===== Promo Code =====
 document.getElementById("applyPromo").onclick = ()=>{
-  const code = document.getElementById("promoCode").value.trim().toUpperCase();
-
-  if(!code) { alert("❌ Enter a promo code"); return; }
-  if(usedPromo){ alert("❌ Promo code already used"); return; }
-
-  if(code === "MINANL"){
-    ads = 0; // remove all ads
-    alert("✅ Promo Applied: Ads reset to 0");
-  } else if(code === "MINAYL"){
-    ads += 1;
-    alert("✅ Promo Applied: +1 Ad");
-  } else if(code === "ADS100"){
-    ads += 10;
-    alert("✅ Promo Applied: +10 Ads");
-  } else {
-    alert("❌ Invalid promo code");
+  const code = document.getElementById("promo").value.trim().toUpperCase();
+  const promoStatus = document.getElementById("promoStatus");
+  if(wallet.promoUsed){
+    promoStatus.textContent = "❌ Promo already used";
     return;
   }
-
-  usedPromo = true;
-  updateUI();
+  if(code==="MINANL"){
+    promoStatus.textContent = "✅ Promo Applied: no ads limit";
+    wallet.promoUsed = true;
+  }else if(code==="MINAYL"){
+    promoStatus.textContent = "✅ Promo Applied";
+    wallet.promoUsed = true;
+  }else if(code==="ADS100"){
+    adsWatched += 10;
+    wallet.adsWatched = adsWatched;
+    document.getElementById("ads").textContent = adsWatched;
+    promoStatus.textContent = "✅ 10 Ads Added!";
+    wallet.promoUsed = true;
+  }else{
+    promoStatus.textContent = "❌ Invalid Promo";
+    return;
+  }
+  localStorage.setItem("wallet",JSON.stringify(wallet));
 };
-updateUI();
 </script>
 </body>
 </html>
