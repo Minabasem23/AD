@@ -36,15 +36,13 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
-button:disabled {
-  background: #999;
-}
+button:disabled { background: #999; }
 #progressBar {
   width: 100%;
   height: 10px;
   background: rgba(255,255,255,0.2);
   border-radius: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   overflow: hidden;
 }
 #progress {
@@ -63,96 +61,99 @@ button:disabled {
 
 <div class="wallet">
   <h2>Mini MO Wallet</h2>
-
-  <p>Balance: <span id="balance">0</span> MO</p>
   <p>Ads watched: <span id="ads">0</span></p>
 
-  <div id="progressBar"><div id="progress"></div></div>
-  <button id="watchBtn">Watch Ad</button>
+  <div id="buttonsContainer"></div>
   <p id="status"></p>
 </div>
 
 <script>
-// ===== Storage =====
-let wallet = JSON.parse(localStorage.getItem("wallet")) || {
-  balance: 0,
-  ads: 0,
-  lastAdIndex: 0
-};
-let balance = wallet.balance;
-let ads = wallet.ads;
-let lastAdIndex = wallet.lastAdIndex;
-
-// Smartlinks بالتسلسل
-const smartlinks = [
-  "https://omg10.com/4/10591369",
-  "https://omg10.com/4/10725699",
-  "https://omg10.com/4/10591326",
-  "https://omg10.com/4/10746516"
+// ===== الإعلانات مع SDK و direct links =====
+const ads = [
+  { sdk: show_10638478, link: "https://omg10.com/4/10591369" },
+  { sdk: show_10743949, link: "https://omg10.com/4/10725699" },
+  { sdk: show_10638478, link: "https://omg10.com/4/10591326" },
+  { sdk: show_10743949, link: "https://omg10.com/4/10746516" }
 ];
 
-// Monetag SDKs بالتناوب
-const adFunctions = [show_10638478, show_10743949];
+// ===== LocalStorage =====
+let wallet = JSON.parse(localStorage.getItem("wallet")) || { adsWatched: 0 };
+let adsWatched = wallet.adsWatched;
 
-const btn = document.getElementById("watchBtn");
+const buttonsContainer = document.getElementById("buttonsContainer");
 const status = document.getElementById("status");
-const progress = document.getElementById("progress");
 
 // ===== تحديث UI =====
 function updateUI(){
-  document.getElementById("balance").textContent = balance;
-  document.getElementById("ads").textContent = ads;
-  progress.style.width = `${(ads / smartlinks.length) * 100}%`;
-  localStorage.setItem("wallet", JSON.stringify({balance, ads, lastAdIndex}));
+  document.getElementById("ads").textContent = adsWatched;
+  localStorage.setItem("wallet", JSON.stringify({ adsWatched }));
 }
-updateUI();
 
-// ===== مشاهدة إعلان بالتسلسل =====
-btn.onclick = async ()=>{
-  if(lastAdIndex >= smartlinks.length){
-    status.innerText = "✅ All ads watched";
-    return;
-  }
+// ===== إنشاء أزرار لكل إعلان =====
+ads.forEach((ad, index) => {
+  const progressBar = document.createElement("div");
+  progressBar.id = "progressBar";
+  const progress = document.createElement("div");
+  progress.id = "progress";
+  progressBar.appendChild(progress);
 
-  const adFunc = adFunctions[lastAdIndex % adFunctions.length];
-  if(typeof adFunc !== "function"){
-    status.innerText = "❌ Ad not loaded";
-    return;
-  }
+  const btn = document.createElement("button");
+  btn.innerText = `Watch Ad ${index + 1}`;
 
-  status.innerText = "⏳ Watching ad...";
-  btn.disabled = true;
+  btn.onclick = async () => {
+    btn.disabled = true;
+    status.innerText = "⏳ Watching ad... 14s";
 
-  const startTime = Date.now();
-  try{
-    await adFunc({ ymid: "user_test" });
-
-    const elapsed = Date.now() - startTime;
-    if(elapsed < 14000){
-      status.innerText = "❌ You did not watch full ad";
+    // ✅ تشغيل SDK
+    if(typeof ad.sdk !== "function"){
+      alert("SDK not loaded");
       btn.disabled = false;
       return;
     }
 
-    // بعد 14 ثانية افتح smartlink
-    window.open(smartlinks[lastAdIndex], "_blank");
+    try{
+      const startTime = Date.now();
 
-    // ✅ زيادة الرصيد والإعلانات
-    balance += 1;
-    ads += 1;
-    lastAdIndex++;
+      await ad.sdk({ ymid: "user_test" });
 
-    updateUI();
-    status.innerText = `✅ +1 MO | Opened smartlink`;
+      // عداد 14 ثانية
+      let elapsed14 = 0;
+      const timer14 = setInterval(() => {
+        elapsed14++;
+        progress.style.width = `${(elapsed14/14)*100}%`;
+        status.innerText = `⏳ Watching ad... ${14 - elapsed14}s`;
 
-    btn.disabled = false;
+        if(elapsed14 >= 14){
+          clearInterval(timer14);
+          // فتح direct link بعد 14s
+          window.open(ad.link, "_blank");
+          // عداد 15 ثانية لمراقبة الغش
+          let elapsed15 = 0;
+          const timer15 = setInterval(()=>{
+            elapsed15++;
+            if(elapsed15 >= 15){
+              clearInterval(timer15);
+              adsWatched++;
+              updateUI();
+              status.innerText = `✅ Ad ${index + 1} completed`;
+              btn.disabled = false;
+            }
+          },1000);
+        }
+      }, 1000);
 
-  }catch(e){
-    console.log(e);
-    status.innerText = "❌ No ad available";
-    btn.disabled = false;
-  }
-};
+    }catch{
+      status.innerText = "❌ Ad failed or not available";
+      btn.disabled = false;
+    }
+  };
+
+  buttonsContainer.appendChild(progressBar);
+  buttonsContainer.appendChild(btn);
+});
+
+// تحديث الـ UI أول مرة
+updateUI();
 </script>
 
 </body>
