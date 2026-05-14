@@ -11,110 +11,207 @@ data-zone="10638478"
 data-sdk="show_10638478"></script>
 
 <style>
-body{
+
+*{
     margin:0;
-    font-family:Arial;
-    background:#0f172a;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    background:
+    radial-gradient(circle at top,#1e3a8a,#0f172a 60%);
     color:white;
+    min-height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-    min-height:100vh;
+    overflow:hidden;
 }
 
 .box{
-    width:340px;
-    text-align:center;
-    background:#111827;
+    width:360px;
+    background:rgba(17,24,39,0.92);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:28px;
     padding:25px;
-    border-radius:25px;
-    box-shadow:0 0 20px rgba(0,0,0,0.5);
+    text-align:center;
+    backdrop-filter:blur(12px);
+    box-shadow:
+    0 0 30px rgba(0,0,0,0.5),
+    inset 0 0 10px rgba(255,255,255,0.03);
 }
 
-.coin{
-    width:170px;
-    height:170px;
-    border-radius:50%;
-    margin:20px auto;
-    background:linear-gradient(145deg,#facc15,#eab308);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:40px;
+.title{
+    font-size:30px;
     font-weight:bold;
-    cursor:pointer;
-    user-select:none;
-    transition:.1s;
+    margin-bottom:10px;
+    background:linear-gradient(90deg,#facc15,#fde68a);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
 }
 
-.coin:active{
-    transform:scale(0.95);
+.balanceBox{
+    margin-top:15px;
+    background:rgba(255,255,255,0.05);
+    padding:15px;
+    border-radius:18px;
+}
+
+.balance{
+    font-size:28px;
+    font-weight:bold;
+    color:#facc15;
+}
+
+.sub{
+    margin-top:8px;
+    font-size:14px;
+    opacity:0.8;
 }
 
 .bar{
     width:100%;
     height:18px;
-    background:#1e293b;
-    border-radius:20px;
+    background:#111827;
+    border-radius:30px;
     overflow:hidden;
-    margin-top:10px;
+    margin-top:12px;
+    border:1px solid rgba(255,255,255,0.06);
 }
 
 .fill{
     height:100%;
     width:100%;
-    background:#22c55e;
+    background:
+    linear-gradient(90deg,#22c55e,#4ade80);
+    transition:.25s;
+}
+
+.coin{
+    width:190px;
+    height:190px;
+    margin:25px auto;
+    cursor:pointer;
+    transition:.1s;
+    user-select:none;
+    position:relative;
+}
+
+.coin img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    border-radius:50%;
+    filter:
+    drop-shadow(0 0 15px gold)
+    drop-shadow(0 0 40px rgba(250,204,21,0.4));
+}
+
+.coin:active{
+    transform:scale(0.93);
+}
+
+.tapEffect{
+    position:absolute;
+    color:#fff;
+    font-weight:bold;
+    animation:float 1s linear forwards;
+    pointer-events:none;
+}
+
+@keyframes float{
+    0%{
+        opacity:1;
+        transform:translateY(0);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-60px);
+    }
 }
 
 button{
     width:100%;
-    padding:12px;
+    padding:14px;
     border:none;
-    border-radius:12px;
-    margin-top:15px;
-    font-weight:bold;
-    cursor:pointer;
-    background:#3b82f6;
+    border-radius:16px;
+    background:
+    linear-gradient(90deg,#2563eb,#3b82f6);
     color:white;
+    font-weight:bold;
+    font-size:16px;
+    margin-top:18px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+
+.note{
+    margin-top:18px;
+    font-size:12px;
+    opacity:0.75;
+    line-height:1.5;
 }
 
 #msg{
-    margin-top:15px;
-    min-height:20px;
+    min-height:22px;
+    margin-top:14px;
+    color:#facc15;
+    font-weight:bold;
 }
+
 </style>
 </head>
 <body>
 
 <div class="box">
 
-<h2>⛏ AAI Miner</h2>
+<div class="title">
+⛏ AAI Miner
+</div>
 
-<h3 id="balance">0 AAI</h3>
+<div class="balanceBox">
 
-<p>
+<div class="balance" id="balance">
+0 AAI
+</div>
+
+<div class="sub">
 ⚡ Charge:
 <span id="chargeText">200 / 200</span>
-</p>
+</div>
 
 <div class="bar">
 <div class="fill" id="fill"></div>
 </div>
 
-<p>
+<div class="sub" style="margin-top:12px;">
 🔋 AUTO CHARGE:
-<span>1 / 3S</span>
-</p>
+1 / 3S
+</div>
+
+</div>
 
 <div class="coin" id="coin">
-AAI
+<img src="coin.png" alt="coin">
 </div>
 
 <button id="adBtn" style="display:none;">
 View ad by Monetag
 </button>
 
-<p id="msg"></p>
+<div id="msg"></div>
+
+<div class="note">
+⚠ جميع AAI محفوظة في هاتفك،
+لا تحذف البوت أو Telegram
+أو تمسح البيانات.
+</div>
 
 </div>
 
@@ -136,21 +233,35 @@ function decrypt(data){
     }
 }
 
-// ===== تحميل البيانات =====
-let save = decrypt(localStorage.getItem("AAI_SAVE")) || {
+// ===== تحميل =====
+let saveData =
+decrypt(localStorage.getItem("AAI_SAVE"));
+
+let save = saveData || {
     balance:0,
-    charge:MAX_CHARGE
+    charge:200
 };
 
-// ===== العناصر =====
-const balanceEl = document.getElementById("balance");
-const chargeText = document.getElementById("chargeText");
-const fill = document.getElementById("fill");
-const coin = document.getElementById("coin");
-const adBtn = document.getElementById("adBtn");
-const msg = document.getElementById("msg");
+// ===== عناصر =====
+const balanceEl =
+document.getElementById("balance");
 
-// ===== تحديث الواجهة =====
+const chargeText =
+document.getElementById("chargeText");
+
+const fill =
+document.getElementById("fill");
+
+const coin =
+document.getElementById("coin");
+
+const adBtn =
+document.getElementById("adBtn");
+
+const msg =
+document.getElementById("msg");
+
+// ===== تحديث =====
 function updateUI(){
 
     balanceEl.innerText =
@@ -167,7 +278,7 @@ function updateUI(){
         encrypt(save)
     );
 
-    // إظهار زر الإعلان فقط إذا الشحن انتهى
+    // إظهار زر الإعلان
     if(save.charge <= 0){
 
         adBtn.style.display = "block";
@@ -182,7 +293,32 @@ function updateUI(){
 
 updateUI();
 
-// ===== الضغط على العملة =====
+// ===== تأثير الضغط =====
+function createEffect(){
+
+    const effect =
+    document.createElement("div");
+
+    effect.className =
+    "tapEffect";
+
+    effect.innerText =
+    "+1";
+
+    effect.style.left =
+    (Math.random()*120+30)+"px";
+
+    effect.style.top =
+    (Math.random()*120+30)+"px";
+
+    coin.appendChild(effect);
+
+    setTimeout(()=>{
+        effect.remove();
+    },1000);
+}
+
+// ===== تعدين =====
 coin.onclick = ()=>{
 
     if(save.charge <= 0){
@@ -196,13 +332,16 @@ coin.onclick = ()=>{
     save.balance += 1;
     save.charge -= 1;
 
+    createEffect();
+
     updateUI();
 };
 
-// ===== إعلان Monetag =====
+// ===== إعلان =====
 adBtn.onclick = async ()=>{
 
-    if(typeof show_10638478 !== "function"){
+    if(typeof show_10638478
+    !== "function"){
 
         msg.innerText =
         "❌ Ad not loaded";
@@ -219,7 +358,8 @@ adBtn.onclick = async ()=>{
             ymid:"user_test"
         });
 
-        save.charge = MAX_CHARGE;
+        save.charge =
+        MAX_CHARGE;
 
         updateUI();
 
@@ -235,7 +375,6 @@ adBtn.onclick = async ()=>{
 };
 
 // ===== AUTO CHARGE =====
-// كل 3 ثواني +1 charge
 setInterval(()=>{
 
     if(save.charge < MAX_CHARGE){
