@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AAI Miner</title>
 
-<!-- Monetag SDK -->
 <script src="//libtl.com/sdk.js"
 data-zone="10638478"
 data-sdk="show_10638478"></script>
@@ -19,84 +18,62 @@ data-sdk="show_10638478"></script>
 }
 
 body{
-    font-family:Arial,sans-serif;
-    background:
-    radial-gradient(circle at top,#1e3a8a,#0f172a 60%);
+    font-family:Arial;
+    background: radial-gradient(circle,#1e3a8a,#0f172a);
     color:white;
-    min-height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-    overflow:hidden;
+    min-height:100vh;
 }
 
 .box{
     width:360px;
-    background:rgba(17,24,39,0.92);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:28px;
+    background:rgba(17,24,39,0.95);
+    border-radius:25px;
     padding:25px;
     text-align:center;
-    backdrop-filter:blur(12px);
-    box-shadow:
-    0 0 30px rgba(0,0,0,0.5),
-    inset 0 0 10px rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
 }
 
 .title{
-    font-size:30px;
-    font-weight:bold;
-    margin-bottom:10px;
-    background:linear-gradient(90deg,#facc15,#fde68a);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.balanceBox{
-    margin-top:15px;
-    background:rgba(255,255,255,0.05);
-    padding:15px;
-    border-radius:18px;
-}
-
-.balance{
     font-size:28px;
     font-weight:bold;
+    margin-bottom:10px;
     color:#facc15;
 }
 
-.sub{
-    margin-top:8px;
+.balance{
+    font-size:26px;
+    margin:10px 0;
+}
+
+.chargeText{
     font-size:14px;
     opacity:0.8;
 }
 
 .bar{
     width:100%;
-    height:18px;
+    height:16px;
     background:#111827;
-    border-radius:30px;
+    border-radius:20px;
     overflow:hidden;
-    margin-top:12px;
-    border:1px solid rgba(255,255,255,0.06);
+    margin-top:10px;
 }
 
 .fill{
     height:100%;
     width:100%;
-    background:
-    linear-gradient(90deg,#22c55e,#4ade80);
-    transition:.25s;
+    background:linear-gradient(90deg,#22c55e,#4ade80);
+    transition:0.2s;
 }
 
 .coin{
-    width:190px;
-    height:190px;
+    width:180px;
+    height:180px;
     margin:25px auto;
     cursor:pointer;
-    transition:.1s;
-    user-select:none;
-    position:relative;
 }
 
 .coin img{
@@ -104,287 +81,152 @@ body{
     height:100%;
     object-fit:contain;
     border-radius:50%;
-    filter:
-    drop-shadow(0 0 15px gold)
-    drop-shadow(0 0 40px rgba(250,204,21,0.4));
-}
-
-.coin:active{
-    transform:scale(0.93);
-}
-
-.tapEffect{
-    position:absolute;
-    color:#fff;
-    font-weight:bold;
-    animation:float 1s linear forwards;
-    pointer-events:none;
-}
-
-@keyframes float{
-    0%{
-        opacity:1;
-        transform:translateY(0);
-    }
-    100%{
-        opacity:0;
-        transform:translateY(-60px);
-    }
+    filter:drop-shadow(0 0 20px gold);
 }
 
 button{
     width:100%;
     padding:14px;
+    margin-top:15px;
     border:none;
-    border-radius:16px;
-    background:
-    linear-gradient(90deg,#2563eb,#3b82f6);
+    border-radius:14px;
+    background:linear-gradient(90deg,#2563eb,#3b82f6);
     color:white;
-    font-weight:bold;
     font-size:16px;
-    margin-top:18px;
+    font-weight:bold;
     cursor:pointer;
-    transition:.2s;
-}
-
-button:hover{
-    transform:translateY(-2px);
-}
-
-.note{
-    margin-top:18px;
-    font-size:12px;
-    opacity:0.75;
-    line-height:1.5;
 }
 
 #msg{
-    min-height:22px;
-    margin-top:14px;
+    margin-top:15px;
+    min-height:20px;
     color:#facc15;
-    font-weight:bold;
+}
+
+.note{
+    margin-top:15px;
+    font-size:12px;
+    opacity:0.7;
+    line-height:1.4;
 }
 
 </style>
 </head>
+
 <body>
 
 <div class="box">
 
-<div class="title">
-⛏ AAI Miner
-</div>
+<div class="title">⛏ AAI Miner</div>
 
-<div class="balanceBox">
+<div class="balance" id="balance">0 AAI</div>
 
-<div class="balance" id="balance">
-0 AAI
-</div>
-
-<div class="sub">
-⚡ Charge:
-<span id="chargeText">200 / 200</span>
+<div class="chargeText">
+⚡ Charge: <span id="chargeText">200 / 200</span>
 </div>
 
 <div class="bar">
 <div class="fill" id="fill"></div>
 </div>
 
-<div class="sub" style="margin-top:12px;">
-🔋 AUTO CHARGE:
-1 / 3S
-</div>
-
-</div>
-
 <div class="coin" id="coin">
-<img src="coin.png" alt="coin">
+<img src="coin.png">
 </div>
 
-<button id="adBtn" style="display:none;">
-View ad by Monetag
-</button>
+<button id="adBtn">⚡ Charge</button>
 
 <div id="msg"></div>
 
 <div class="note">
-⚠ جميع AAI محفوظة في هاتفك،
-لا تحذف البوت أو Telegram
-أو تمسح البيانات.
+⚠ جميع AAI محفوظة في هاتفك ولا تحذف التطبيق أو تمسح البيانات.
 </div>
 
 </div>
 
 <script>
 
-// ===== الإعداد =====
 const MAX_CHARGE = 200;
 
 // ===== تشفير =====
-function encrypt(data){
-    return btoa(JSON.stringify(data));
+function encrypt(d){
+    return btoa(JSON.stringify(d));
 }
 
-function decrypt(data){
+function decrypt(d){
     try{
-        return JSON.parse(atob(data));
+        return JSON.parse(atob(d));
     }catch{
         return null;
     }
 }
 
 // ===== تحميل =====
-let saveData =
-decrypt(localStorage.getItem("AAI_SAVE"));
-
-let save = saveData || {
+let save = decrypt(localStorage.getItem("AAI_SAVE")) || {
     balance:0,
-    charge:200
+    charge:MAX_CHARGE
 };
 
 // ===== عناصر =====
-const balanceEl =
-document.getElementById("balance");
-
-const chargeText =
-document.getElementById("chargeText");
-
-const fill =
-document.getElementById("fill");
-
-const coin =
-document.getElementById("coin");
-
-const adBtn =
-document.getElementById("adBtn");
-
-const msg =
-document.getElementById("msg");
+const balanceEl = document.getElementById("balance");
+const chargeText = document.getElementById("chargeText");
+const fill = document.getElementById("fill");
+const coin = document.getElementById("coin");
+const adBtn = document.getElementById("adBtn");
+const msg = document.getElementById("msg");
 
 // ===== تحديث =====
 function updateUI(){
 
-    balanceEl.innerText =
-    save.balance + " AAI";
-
-    chargeText.innerText =
-    save.charge + " / " + MAX_CHARGE;
+    balanceEl.innerText = save.balance + " AAI";
+    chargeText.innerText = save.charge + " / " + MAX_CHARGE;
 
     fill.style.width =
     (save.charge / MAX_CHARGE * 100) + "%";
 
-    localStorage.setItem(
-        "AAI_SAVE",
-        encrypt(save)
-    );
-
-    // إظهار زر الإعلان
-    if(save.charge <= 0){
-
-        adBtn.style.display = "block";
-        coin.style.opacity = "0.5";
-
-    }else{
-
-        adBtn.style.display = "none";
-        coin.style.opacity = "1";
-    }
+    localStorage.setItem("AAI_SAVE", encrypt(save));
 }
 
 updateUI();
 
-// ===== تأثير الضغط =====
-function createEffect(){
-
-    const effect =
-    document.createElement("div");
-
-    effect.className =
-    "tapEffect";
-
-    effect.innerText =
-    "+1";
-
-    effect.style.left =
-    (Math.random()*120+30)+"px";
-
-    effect.style.top =
-    (Math.random()*120+30)+"px";
-
-    coin.appendChild(effect);
-
-    setTimeout(()=>{
-        effect.remove();
-    },1000);
-}
-
-// ===== تعدين =====
+// ===== التعدين =====
 coin.onclick = ()=>{
 
     if(save.charge <= 0){
-
-        msg.innerText =
-        "⚠ Charge empty";
-
+        msg.innerText = "⚠ Charge empty";
         return;
     }
 
     save.balance += 1;
     save.charge -= 1;
 
-    createEffect();
-
     updateUI();
 };
 
-// ===== إعلان =====
+// ===== الشحن بالإعلان =====
 adBtn.onclick = async ()=>{
 
-    if(typeof show_10638478
-    !== "function"){
-
-        msg.innerText =
-        "❌ Ad not loaded";
-
+    if(typeof show_10638478 !== "function"){
+        msg.innerText = "❌ Ad not loaded";
         return;
     }
 
-    msg.innerText =
-    "⏳ Loading ad...";
+    msg.innerText = "⏳ Loading ad...";
 
     try{
 
-        await show_10638478({
-            ymid:"user_test"
-        });
+        await show_10638478({ymid:"user_test"});
 
-        save.charge =
-        MAX_CHARGE;
+        save.charge = MAX_CHARGE;
 
         updateUI();
 
-        msg.innerText =
-        "✅ Charge restored";
+        msg.innerText = "✅ Charge restored";
 
     }catch{
 
-        msg.innerText =
-        "❌ No ads available";
+        msg.innerText = "❌ No ads available";
     }
-
 };
-
-// ===== AUTO CHARGE =====
-setInterval(()=>{
-
-    if(save.charge < MAX_CHARGE){
-
-        save.charge += 1;
-
-        updateUI();
-    }
-
-},3000);
 
 </script>
 
