@@ -3,131 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ads System Fixed</title>
+<title>AAI Miner</title>
 
-<!-- Monetag SDKs -->
-<script src="//libtl.com/sdk.js" data-zone="10638478" data-sdk="show_10638478"></script>
-<script src="//libtl.com/sdk.js" data-zone="10743949" data-sdk="show_10743949"></script>
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js"
+data-zone="10638478"
+data-sdk="show_10638478"></script>
 
 <style>
-body {
-  font-family: Arial;
-  background: linear-gradient(135deg,#6a11cb,#2575fc);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
 }
-.box {
-  background: rgba(0,0,0,0.4);
-  padding: 25px;
-  border-radius: 20px;
-  width: 360px;
-  text-align: center;
+
+.box{
+    width:340px;
+    text-align:center;
+    background:#111827;
+    padding:25px;
+    border-radius:25px;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
 }
-button {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 10px;
-  background: #ffd700;
-  font-weight: bold;
-  cursor: pointer;
+
+.coin{
+    width:170px;
+    height:170px;
+    border-radius:50%;
+    margin:20px auto;
+    background:linear-gradient(145deg,#facc15,#eab308);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:40px;
+    font-weight:bold;
+    cursor:pointer;
+    user-select:none;
+    transition:.1s;
 }
-button:disabled {
-  background: #888;
+
+.coin:active{
+    transform:scale(0.95);
 }
-.progressBar {
-  width: 100%;
-  height: 10px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 5px;
-  overflow: hidden;
+
+.bar{
+    width:100%;
+    height:18px;
+    background:#1e293b;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:10px;
 }
-.progress {
-  height: 100%;
-  width: 0%;
-  background: #00ff88;
+
+.fill{
+    height:100%;
+    width:100%;
+    background:#22c55e;
 }
-#status {
-  margin-top: 10px;
-  min-height: 20px;
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    margin-top:15px;
+    font-weight:bold;
+    cursor:pointer;
+    background:#3b82f6;
+    color:white;
+}
+
+#msg{
+    margin-top:15px;
+    min-height:20px;
 }
 </style>
 </head>
 <body>
 
 <div class="box">
-<h3>Ads System</h3>
 
-<div class="progressBar"><div id="prog1" class="progress"></div></div>
-<button id="btn1">Watch Ad 1</button>
+<h2>⛏ AAI Miner</h2>
 
-<div class="progressBar"><div id="prog2" class="progress"></div></div>
-<button id="btn2">Watch Ad 2</button>
+<h3 id="balance">0 AAI</h3>
 
-<p id="status"></p>
+<p>
+⚡ Charge:
+<span id="chargeText">5 / 5</span>
+</p>
+
+<div class="bar">
+<div class="fill" id="fill"></div>
+</div>
+
+<p>
+🤖 AUTO_MINING:
+<span id="autoMining">1 / 2S</span>
+</p>
+
+<div class="coin" id="coin">
+AAI
+</div>
+
+<button id="adBtn" style="display:none;">
+View ad by Monetag
+</button>
+
+<p id="msg"></p>
+
 </div>
 
 <script>
-const MAX_ADS = 100;
-const SMART_LINK = "https://omg10.com/4/10746516";
 
-let data = JSON.parse(localStorage.getItem("adsData")) || { ad1:0, ad2:0 };
-let isWatching = false;
-const status = document.getElementById("status");
+// ===== الإعداد =====
+const MAX_CHARGE = 5;
 
-function updateUI(){
-  document.getElementById("prog1").style.width = (data.ad1/MAX_ADS*100)+"%";
-  document.getElementById("prog2").style.width = (data.ad2/MAX_ADS*100)+"%";
-  localStorage.setItem("adsData", JSON.stringify(data));
+// ===== تشفير =====
+function encrypt(data){
+    return btoa(JSON.stringify(data));
 }
+
+function decrypt(data){
+    try{
+        return JSON.parse(atob(data));
+    }catch{
+        return null;
+    }
+}
+
+// ===== تحميل =====
+let save = decrypt(localStorage.getItem("AAI_SAVE")) || {
+    balance:0,
+    charge:MAX_CHARGE
+};
+
+// ===== عناصر =====
+const balanceEl = document.getElementById("balance");
+const chargeText = document.getElementById("chargeText");
+const fill = document.getElementById("fill");
+const coin = document.getElementById("coin");
+const adBtn = document.getElementById("adBtn");
+const msg = document.getElementById("msg");
+
+// ===== تحديث =====
+function updateUI(){
+
+    balanceEl.innerText =
+    save.balance + " AAI";
+
+    chargeText.innerText =
+    save.charge + " / " + MAX_CHARGE;
+
+    fill.style.width =
+    (save.charge / MAX_CHARGE * 100) + "%";
+
+    localStorage.setItem(
+        "AAI_SAVE",
+        encrypt(save)
+    );
+
+    // زر الإعلان
+    if(save.charge <= 0){
+
+        adBtn.style.display = "block";
+        coin.style.opacity = "0.5";
+
+    }else{
+
+        adBtn.style.display = "none";
+        coin.style.opacity = "1";
+    }
+}
+
 updateUI();
 
-function runAd(sdk, key){
-  if(isWatching){
-    status.innerText = "⚠️ انتظر انتهاء الإعلان";
-    return;
-  }
-  if(data[key]>=MAX_ADS){
-    status.innerText = "❌ وصلت للحد 100";
-    return;
-  }
-  if(typeof sdk!=="function"){
-    status.innerText = "❌ SDK لم يعمل";
-    return;
-  }
+// ===== ضغط العملة =====
+coin.onclick = ()=>{
 
-  isWatching = true;
-  status.innerText = "⏳ جاري مشاهدة الإعلان...";
-  let adCompleted = false;
+    if(save.charge <= 0){
 
-  const visibilityHandler = () => {
-    if(document.hidden && !adCompleted){
-      status.innerText = "⚠️ خرجت قبل انتهاء الإعلان";
+        msg.innerText =
+        "⚠ Charge empty";
+
+        return;
     }
-  };
-  document.addEventListener("visibilitychange", visibilityHandler);
 
-  sdk({ymid:"user_test"}).then(()=>{
-    adCompleted = true;
-    data[key]++;
+    save.balance += 1;
+    save.charge -= 1;
+
     updateUI();
-    status.innerText = "✅ شاهدت الإعلان بالكامل، تم احتساب الإعلان!";
-  }).catch(()=>{
-    status.innerText = "❌ فشل الإعلان";
-  }).finally(()=>{
-    // الرابط يُفتح دائمًا سواء أكمل المستخدم أو لا
-    window.open(SMART_LINK,"_blank");
-    isWatching = false;
-    document.removeEventListener("visibilitychange", visibilityHandler);
-  });
-}
+};
 
-document.getElementById("btn1").onclick = ()=> runAd(show_10638478,"ad1");
-document.getElementById("btn2").onclick = ()=> runAd(show_10743949,"ad2");
+// ===== إعلان Monetag =====
+adBtn.onclick = async ()=>{
+
+    if(typeof show_10638478 !== "function"){
+
+        msg.innerText =
+        "❌ Ad not loaded";
+
+        return;
+    }
+
+    msg.innerText =
+    "⏳ Loading ad...";
+
+    try{
+
+        await show_10638478({
+            ymid:"user_test"
+        });
+
+        save.charge = MAX_CHARGE;
+
+        updateUI();
+
+        msg.innerText =
+        "✅ Charge restored";
+
+    }catch{
+
+        msg.innerText =
+        "❌ No ads available";
+    }
+
+};
+
+// ===== AUTO MINING =====
+// كل 2 ثانية +1 AAI
+setInterval(()=>{
+
+    save.balance += 1;
+
+    updateUI();
+
+},2000);
+
 </script>
 
 </body>
