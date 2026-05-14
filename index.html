@@ -94,7 +94,7 @@ button{
 
 <p>
 ⚡ Charge:
-<span id="chargeText">5 / 5</span>
+<span id="chargeText">200 / 200</span>
 </p>
 
 <div class="bar">
@@ -102,8 +102,8 @@ button{
 </div>
 
 <p>
-🤖 AUTO_MINING:
-<span id="autoMining">1 / 2S</span>
+🔋 AUTO CHARGE:
+<span>1 / 3S</span>
 </p>
 
 <div class="coin" id="coin">
@@ -121,7 +121,7 @@ View ad by Monetag
 <script>
 
 // ===== الإعداد =====
-const MAX_CHARGE = 5;
+const MAX_CHARGE = 200;
 
 // ===== تشفير =====
 function encrypt(data){
@@ -136,13 +136,13 @@ function decrypt(data){
     }
 }
 
-// ===== تحميل =====
+// ===== تحميل البيانات =====
 let save = decrypt(localStorage.getItem("AAI_SAVE")) || {
     balance:0,
     charge:MAX_CHARGE
 };
 
-// ===== عناصر =====
+// ===== العناصر =====
 const balanceEl = document.getElementById("balance");
 const chargeText = document.getElementById("chargeText");
 const fill = document.getElementById("fill");
@@ -150,7 +150,7 @@ const coin = document.getElementById("coin");
 const adBtn = document.getElementById("adBtn");
 const msg = document.getElementById("msg");
 
-// ===== تحديث =====
+// ===== تحديث الواجهة =====
 function updateUI(){
 
     balanceEl.innerText =
@@ -167,7 +167,7 @@ function updateUI(){
         encrypt(save)
     );
 
-    // زر الإعلان
+    // إظهار زر الإعلان فقط إذا الشحن انتهى
     if(save.charge <= 0){
 
         adBtn.style.display = "block";
@@ -182,7 +182,7 @@ function updateUI(){
 
 updateUI();
 
-// ===== ضغط العملة =====
+// ===== الضغط على العملة =====
 coin.onclick = ()=>{
 
     if(save.charge <= 0){
@@ -234,15 +234,18 @@ adBtn.onclick = async ()=>{
 
 };
 
-// ===== AUTO MINING =====
-// كل 2 ثانية +1 AAI
+// ===== AUTO CHARGE =====
+// كل 3 ثواني +1 charge
 setInterval(()=>{
 
-    save.balance += 1;
+    if(save.charge < MAX_CHARGE){
 
-    updateUI();
+        save.charge += 1;
 
-},2000);
+        updateUI();
+    }
+
+},3000);
 
 </script>
 
