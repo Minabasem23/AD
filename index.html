@@ -95,6 +95,16 @@ button{
     font-size:16px;
     font-weight:bold;
     cursor:pointer;
+    outline:none;          /* إزالة الـ outline عند الضغط */
+    -webkit-tap-highlight-color: transparent; /* إزالة الـ highlight على الموبايل */
+}
+
+button:focus{
+    outline:none;          /* إزالة الـ outline عند التركيز */
+}
+
+button:active{
+    outline:none;
 }
 
 #msg{
@@ -138,7 +148,7 @@ button{
 <div id="msg"></div>
 
 <div class="note">
-⚠ جميع AAI محفوظة في هاتفك ولا تحذف التطبيق أو تمسح البيانات.
+⚠ All AAI is saved on your device. Do not delete the app or clear data.
 </div>
 
 </div>
@@ -147,7 +157,7 @@ button{
 
 const MAX_CHARGE = 200;
 
-// ===== تشفير =====
+// ===== Encrypt =====
 function encrypt(d){
     return btoa(JSON.stringify(d));
 }
@@ -160,13 +170,13 @@ function decrypt(d){
     }
 }
 
-// ===== تحميل =====
+// ===== Load =====
 let save = decrypt(localStorage.getItem("AAI_SAVE")) || {
     balance:0,
     charge:MAX_CHARGE
 };
 
-// ===== عناصر =====
+// ===== Elements =====
 const balanceEl = document.getElementById("balance");
 const chargeText = document.getElementById("chargeText");
 const fill = document.getElementById("fill");
@@ -174,7 +184,7 @@ const coin = document.getElementById("coin");
 const adBtn = document.getElementById("adBtn");
 const msg = document.getElementById("msg");
 
-// ===== تحديث =====
+// ===== Update UI =====
 function updateUI(){
 
     balanceEl.innerText = save.balance + " AAI";
@@ -188,7 +198,7 @@ function updateUI(){
 
 updateUI();
 
-// ===== التعدين =====
+// ===== Mining =====
 coin.onclick = ()=>{
 
     if(save.charge <= 0){
@@ -202,7 +212,7 @@ coin.onclick = ()=>{
     updateUI();
 };
 
-// ===== الشحن بالإعلان =====
+// ===== Charge with Ad =====
 adBtn.onclick = async ()=>{
 
     if(typeof show_10638478 !== "function"){
