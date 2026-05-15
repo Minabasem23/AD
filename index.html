@@ -232,18 +232,42 @@ adBtn.onclick = async ()=>{
 
     msg.innerText = "⏳ Loading ad...";
 
+    const AD_DURATION = 15000;
+    let adStartTime = Date.now();
+    let userLeft = false;
+
+    function onHide(){
+        if(Date.now() - adStartTime < AD_DURATION){
+            userLeft = true;
+        }
+    }
+
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("blur", onHide);
+
     try{
 
-        await show_10638478({ymid:"user_test"});
+        const adPromise = show_10638478({ymid:"user_test"});
+        const timerPromise = new Promise(res => setTimeout(res, AD_DURATION));
+
+        await Promise.all([adPromise, timerPromise]);
+
+        document.removeEventListener("visibilitychange", onHide);
+        window.removeEventListener("blur", onHide);
+
+        if(userLeft){
+            msg.innerText = "⚠️ You didn't watch to the end";
+            return;
+        }
 
         save.charge = MAX_CHARGE;
-
         updateUI();
-
         msg.innerText = "✅ Charge restored";
 
     }catch{
 
+        document.removeEventListener("visibilitychange", onHide);
+        window.removeEventListener("blur", onHide);
         msg.innerText = "❌ No ads available";
     }
 };
